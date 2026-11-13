@@ -1,0 +1,12 @@
+version: 1.0.31
+files:
+  - url: Kassa-TT-DEMO-Setup-1.0.31.AppImage
+    sha512: RgOYbho+sA4EE6f7pyg0m9TuW3tnjzWIgDuu/6FuyG1/jTAjSOlxsEJtce5qPfcz2zKeLNR3AzKcYYF4viYRfQ==
+    size: 82175496
+    blockMapSize: 87580
+  - url: Kassa-TT-DEMO-Setup-1.0.31.deb
+    sha512: PBmBdMktpe5Flu4JF8JhA01b0EkhyNqM7PPBu7LHdLuKt9tEGJpdtIwy03Dj8CCwGWoNLsyoJcuxc6N8tSSM4A==
+    size: 71347204
+path: Kassa-TT-DEMO-Setup-1.0.31.AppImage
+sha512: RgOYbho+sA4EE6f7pyg0m9TuW3tnjzWIgDuu/6FuyG1/jTAjSOlxsEJtce5qPfcz2zKeLNR3AzKcYYF4viYRfQ==
+releaseDate: '2026-11-13T18:11:17.969Z'

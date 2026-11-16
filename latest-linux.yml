@@ -1,0 +1,12 @@
+version: 1.0.72
+files:
+  - url: Kassa-TT-Setup-1.0.72.AppImage
+    sha512: 4Z/VPd3V7A69jvNHSQX8bB/BpM4D7tCTDqHzx36Q4u3T3ViS+zUa0jdJiiuI5m4uyFqGRtwXastECwMe3jC+zA==
+    size: 82195756
+    blockMapSize: 87360
+  - url: Kassa-TT-Setup-1.0.72.deb
+    sha512: Z/mo18G8wyjxi6DAzWv1Y+9V/5c9AsGMLoZyaKxfNj98whhOl7XK9whN4PP3Bsi8GTpN9cLJTgB5yDfqAOjZ9w==
+    size: 71599670
+path: Kassa-TT-Setup-1.0.72.AppImage
+sha512: 4Z/VPd3V7A69jvNHSQX8bB/BpM4D7tCTDqHzx36Q4u3T3ViS+zUa0jdJiiuI5m4uyFqGRtwXastECwMe3jC+zA==
+releaseDate: '2026-11-17T07:26:43.164Z'

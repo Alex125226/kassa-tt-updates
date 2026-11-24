@@ -1,0 +1,15 @@
+{
+ "version": "2.1.0",
+ "notes": "Первая версия с кнопкой «Обновить».",
+ "minShell": "2.1.0",
+ "files": [
+  {
+   "name": "index.html",
+   "sha256": "38c1597b2262adfc68400d2b7e96746229c3f0c5c04cfcf30a4716357ba5083f"
+  },
+  {
+   "name": "adapter.js",
+   "sha256": "cce01e371ec733c56be7e7ee060559e4a8d98cd139cf0eab12cece8254ee52cf"
+  }
+ ]
+}

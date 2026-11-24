@@ -1,0 +1,2036 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Учёт ТТ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="fonts/golos-text/400.css"><link rel="stylesheet" href="fonts/golos-text/500.css"><link rel="stylesheet" href="fonts/golos-text/600.css"><link rel="stylesheet" href="fonts/golos-text/700.css"><link rel="stylesheet" href="fonts/unbounded/500.css"><link rel="stylesheet" href="fonts/unbounded/700.css">
+<style>
+/* Layout: sticky dark "ledger" rail on the left, working area on the right; rail becomes a scrolling top strip on phones */
+:root{
+  --bg:#EEF2F4; --panel:#FFFFFF; --panel-2:#F6F8F9; --ink:#14212B; --muted:#5B6B78; --line:#D9E1E6;
+  --accent:#0E6A86; --accent-ink:#FFFFFF; --accent-weak:#DDEEF4;
+  --rail:#0F2430; --rail-ink:#C9D8E0; --rail-muted:#7F98A6; --rail-hi:#1B3A4A; --rail-acc:#7CD0EA;
+  --pos:#167A3E; --pos-weak:#DFF3E6; --neg:#B42318; --neg-weak:#FBE3E0; --warn:#A35A06; --warn-weak:#FBEFD9;
+  --shadow:0 1px 2px rgba(15,36,48,.06),0 6px 24px rgba(15,36,48,.07);
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1418; --panel:#141E24; --panel-2:#18242B; --ink:#E2EAEE; --muted:#8EA0AB; --line:#26353E;
+  --accent:#4DB4D4; --accent-ink:#06171E; --accent-weak:#163541;
+  --rail:#081014; --rail-ink:#C2D2DA; --rail-muted:#6C8593; --rail-hi:#15303C; --rail-acc:#7CD0EA;
+  --pos:#4CC27E; --pos-weak:#123222; --neg:#F07468; --neg-weak:#3A1714; --warn:#E3A048; --warn-weak:#33240F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1418; --panel:#141E24; --panel-2:#18242B; --ink:#E2EAEE; --muted:#8EA0AB; --line:#26353E;
+  --accent:#4DB4D4; --accent-ink:#06171E; --accent-weak:#163541;
+  --rail:#081014; --rail-ink:#C2D2DA; --rail-muted:#6C8593; --rail-hi:#15303C; --rail-acc:#7CD0EA;
+  --pos:#4CC27E; --pos-weak:#123222; --neg:#F07468; --neg-weak:#3A1714; --warn:#E3A048; --warn-weak:#33240F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+.num,td.n,th.n{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);gap:20px;align-items:start;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;max-width:1500px;margin:0 auto}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--rail);color:var(--rail-ink);border-radius:14px;padding:18px 10px 14px;max-height:calc(100vh - 32px);overflow:auto}
+.brand{padding:0 10px 14px;border-bottom:1px solid var(--rail-hi);margin-bottom:8px}
+.brand b{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.01em;color:#fff;display:block}
+.brand small{color:var(--rail-muted);font-size:12px}
+.nav-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--rail-muted);padding:14px 10px 4px}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:8px;color:var(--rail-ink);text-decoration:none;cursor:pointer;font-size:13.5px}
+.nav a:hover{background:var(--rail-hi)}
+.nav a.on{background:var(--rail-hi);color:#fff;box-shadow:inset 3px 0 0 var(--rail-acc)}
+.nav a .cnt{font-size:11px;color:var(--rail-muted);font-variant-numeric:tabular-nums}
+.mode{margin:14px 10px 0;font-size:11.5px;color:var(--rail-muted);display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--rail-muted);flex:none}
+.dot.ok{background:#4CC27E}.dot.loc{background:#E3A048}
+main{min-width:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 0 16px}
+.top h1{font-family:var(--f-display);font-weight:500;font-size:22px;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.top .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.pri:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--neg)}
+.btn.danger.arm{background:var(--neg);color:#fff;border-color:var(--neg)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card>h3{margin:0;padding:14px 16px 0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.pad{padding:14px 16px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+input[type=text],input[type=number],input[type=date],input[type=search],select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:6px 11px;cursor:pointer;font-size:13px;white-space:nowrap}
+.seg button.on{background:var(--accent-weak);color:var(--accent);font-weight:600}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{background:var(--panel-2);text-align:left;font-weight:600;font-size:12px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--accent-weak)}
+tr.tot td{font-weight:700;background:var(--panel-2);border-top:2px solid var(--line)}
+.neg{color:var(--neg)} .pos{color:var(--pos)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--pos-weak);color:var(--pos)}
+.pill.draft{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+.pill.a{background:var(--pos-weak);color:var(--pos)}.pill.b{background:var(--warn-weak);color:var(--warn)}.pill.c{background:var(--neg-weak);color:var(--neg)}
+.pill.t{background:var(--accent-weak);color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.kpi{padding:14px 16px}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:500;font-size:22px;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+.bars{display:grid;gap:9px}
+.bar{display:grid;grid-template-columns:110px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px}
+.bar .tr{height:10px;background:var(--panel-2);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.bar .fl{height:100%;background:var(--accent);border-radius:5px}
+.bar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.list{display:grid}
+.list .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;cursor:pointer}
+.list .row:last-child{border-bottom:0}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+.banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);background:var(--warn-weak);color:var(--ink);border:1px solid var(--line);margin-bottom:14px;font-size:13px}
+.share{display:inline-block;width:60px;height:6px;background:var(--panel-2);border-radius:3px;vertical-align:middle;margin-right:6px;overflow:hidden}
+.share i{display:block;height:100%;background:var(--accent)}
+/* modal */
+#modal{position:fixed;inset:0;z-index:50;background:rgba(8,18,24,.55);display:flex;justify-content:center;align-items:flex-start;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 24px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--panel);border-radius:14px;width:100%;max-width:1000px;box-shadow:0 20px 60px rgba(0,0,0,.35);border:1px solid var(--line)}
+.sheet.narrow{max-width:560px}
+.sh-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.sh-h h2{margin:0;font-family:var(--f-display);font-weight:500;font-size:18px;text-wrap:balance}
+.sh-b{padding:16px 18px;display:grid;gap:14px}
+.sh-f{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:14px 18px;border-top:1px solid var(--line);background:var(--panel-2);border-radius:0 0 14px 14px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.fgrid label input,.fgrid label select,.fgrid label textarea{color:var(--ink);font-size:14px}
+.lines td{padding:5px 6px}
+.lines input,.lines select{width:100%}
+.lines input.q{max-width:96px;text-align:right}
+.lines td.i{color:var(--muted);width:30px;text-align:center}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px}
+.x:hover{color:var(--neg);background:var(--neg-weak)}
+.total{font-family:var(--f-display);font-size:18px;font-variant-numeric:tabular-nums}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);z-index:80;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);max-width:min(560px,calc(100vw - 32px));font-size:13.5px}
+#toast.neg{background:var(--neg);color:#fff}
+.hint{font-size:12px;color:var(--muted)}
+input.bad{border-color:var(--neg)!important;background:var(--neg-weak);color:var(--neg)}
+.isr-in{width:100%;min-width:240px}
+.isr-list{position:fixed;z-index:90;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(8,18,24,.28);overflow:auto;padding:4px}
+.isr-opt{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13.5px}
+.isr-opt.on,.isr-opt:hover{background:var(--accent-weak)}
+.isr-r{display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;gap:1px}
+.isr-empty{padding:12px;color:var(--muted);font-size:13px}
+table.sched th.d,table.sched td.d{padding:3px 2px;text-align:center;min-width:30px;font-variant-numeric:tabular-nums}
+table.sched th.d span{font-weight:400;font-size:10px}
+table.sched th.we{color:var(--accent)}
+table.sched td.warn{color:var(--warn);font-weight:700}
+.cell{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:var(--panel);cursor:pointer;color:var(--accent-ink);font-size:11px;padding:0}
+.cell:hover{border-color:var(--accent)}
+.cell.on{background:var(--accent);border-color:var(--accent)}
+details summary::marker{color:var(--muted)}
+@media (max-width:1080px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){
+  #app{grid-template-columns:minmax(0,1fr);gap:12px}
+  .rail{position:static;max-height:none;padding:10px;display:flex;gap:6px;align-items:center;overflow-x:auto}
+  .brand{border:0;padding:0 8px 0 4px;margin:0;flex:none}.brand small{display:none}.brand b{font-size:15px}
+  .nav-h,.mode{display:none}
+  .nav{display:flex;gap:4px;flex:none}
+  .nav a{white-space:nowrap}.nav a .cnt{display:none}
+}
+@media (max-width:520px){.kpis{grid-template-columns:minmax(0,1fr)}.bar{grid-template-columns:80px minmax(0,1fr) 80px}.top h1{font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="app">
+  <aside class="rail" id="rail"></aside>
+  <main id="main"><div class="empty"><b>Загрузка базы…</b>Подключаемся к данным учёта.</div></main>
+</div>
+<div id="modal" hidden></div>
+<div id="toast" hidden></div>
+
+<script src="xlsx.full.min.js"></script><script src="supabase.js"></script><script src="adapter.js"></script>
+<script>
+(() => {
+"use strict";
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const r2 = n => Math.round((+n || 0) * 100) / 100;
+const money = n => r2(n).toLocaleString("ru-RU", {minimumFractionDigits:2, maximumFractionDigits:2});
+const money0 = n => Math.round(+n || 0).toLocaleString("ru-RU");
+const qtyf = n => (Math.round((+n || 0) * 1000) / 1000).toLocaleString("ru-RU", {maximumFractionDigits:3});
+const pct = n => (isFinite(n) ? (Math.round(n * 10) / 10).toLocaleString("ru-RU", {minimumFractionDigits:1, maximumFractionDigits:1}) : "—") + "%";
+const uid = p => p + "_" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+function iso(d){ const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
+const today = () => iso(new Date());
+const addDays = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
+const dfmt = s => s ? s.slice(8,10) + "." + s.slice(5,7) + "." + s.slice(0,4) : "";
+const num = v => { const n = parseFloat(String(v).replace(",", ".").replace(/\s/g, "")); return isFinite(n) ? n : 0; };
+
+const TYPES = {
+  receipt:  {name:"Поступление товаров", short:"Поступление", plural:"Поступления", pre:"ПТ"},
+  transfer: {name:"Перемещение товаров", short:"Перемещение", plural:"Перемещения", pre:"ПМ"},
+  sale:     {name:"Реализация за смену", short:"Продажа", plural:"Продажи (смены)", pre:"РЛ"},
+  writeoff: {name:"Списание товаров", short:"Списание", plural:"Списания", pre:"СП"},
+  inventory:{name:"Инвентаризация", short:"Инвентаризация", plural:"Инвентаризации", pre:"ИН"},
+  payment:  {name:"Оплата поставщику", short:"Оплата", plural:"Оплаты поставщикам", pre:"ОП"},
+};
+const WO_REASONS = ["Порча / брак", "Истёк срок годности", "Разморозка", "Бой / утеря", "Прочее"];
+const woReason = d => d.reason || WO_REASONS[0];
+const COLS = ["items", "stores", "suppliers", "docs", "settings", "orgs", "accounts", "articles", "employees", "shifts", "owners"];
+
+/* ---------- state ---------- */
+const S = {items:[], stores:[], suppliers:[], docs:[], settings:[], orgs:[], accounts:[], articles:[], employees:[], shifts:[], owners:[]};
+let mode = "loading", db = null, dl = null, canWrite = true, ver = 0, L = null, Lver = -1;
+const loaded = new Set();
+const ui = {
+  view: "dash", from: addDays(today(), -29), to: today(),
+  jSearch: "", jStore: "all", jSupp: "all", jFrom: "all", jTo: "all", jReason: "all", itemSearch: "", itemGroup: "all",
+  stockMode: "qty", stockGroup: "all", stockStore: "all", stockSupp: "all", stockSearch: "", stockQty: "nonzero", stockQmin: "", stockQmax: "",
+  salesBy: "store", salesStore: "all", abcStore: "all", abcBy: "sum",
+  cardItem: "", cardStore: "all",
+};
+let edit = null;      // document or reference being edited in the modal
+let lastTable = null; // {name, head, rows} for CSV export
+
+const byId = (col, id) => S[col].find(x => x.id === id);
+const storeName = id => byId("stores", id)?.name || "—";
+const gkey = g => String(g || "Без группы").trim();
+const markups = () => byId("settings", "markups")?.groups || {};
+function markupOf(itemId){ const it = itemOf(itemId); if (!it) return null; const m = markups()[gkey(it.group)]; return m === undefined || m === null || m === "" ? null : +m; }
+const suppName = id => byId("suppliers", id)?.name || "—";
+const itemOf = id => byId("items", id);
+const sortedStores = () => S.stores.slice().sort((a, b) => (a.kind === "warehouse" ? -1 : 0) - (b.kind === "warehouse" ? -1 : 0) || (a.name || "").localeCompare(b.name || "", "ru"));
+const retail = () => sortedStores().filter(s => s.kind !== "warehouse");
+const groups = () => [...new Set(S.items.map(i => i.group || "Без группы"))].sort((a, b) => a.localeCompare(b, "ru"));
+const sortedItems = () => S.items.slice().sort((a, b) => (a.group || "").localeCompare(b.group || "", "ru") || (a.name || "").localeCompare(b.name || "", "ru"));
+
+let rq = 0;
+function bump(){ ver++; if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); }); }
+
+let tt;
+function toast(msg, kind){ const t = $("#toast"); t.textContent = msg; t.className = kind || ""; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 3600); }
+
+/* ---------- storage ---------- */
+function writeErr(e){
+  const c = e && e.code;
+  if (c === "invalid_argument") { canWrite = false; bump(); return "Нет прав на изменение данных. Попросите владельца дать доступ «Участник» или выше."; }
+  if (c === "quota_exceeded") return "База заполнена: " + (e.message || "лимит документов") + ". Удалите старые документы.";
+  if (c === "resource_exhausted") return "Слишком много операций подряд. Подождите пару секунд и повторите.";
+  return "Не удалось сохранить: " + (e && e.message || "ошибка связи") + ".";
+}
+async function put(col, obj){
+  const {id, ...rest} = obj;
+  if (mode === "db") { await db.collection(col).doc(id).set(JSON.parse(JSON.stringify(rest))); }
+  else { const a = S[col]; const i = a.findIndex(x => x.id === id); if (i >= 0) a[i] = obj; else a.push(obj); bump(); }
+}
+async function del(col, id){
+  if (mode === "db") await db.collection(col).doc(id).delete();
+  else { S[col] = S[col].filter(x => x.id !== id); bump(); }
+}
+
+/* ---------- ledger (проведение) ---------- */
+function ledger(){
+  if (Lver === ver && L) return L;
+  const docs = S.docs.filter(d => d.posted).slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.created || 0) - (b.created || 0));
+  const stock = new Map(), net = new Map(), avg = new Map(), moves = [], supp = [];
+  const K = (s, i) => s + "|" + i;
+  const add = (s, i, q) => stock.set(K(s, i), (stock.get(K(s, i)) || 0) + q);
+  const addNet = (i, q) => net.set(i, (net.get(i) || 0) + q);
+  for (const d of docs) {
+    const lines = Array.isArray(d.lines) ? d.lines.filter(l => l && l.item) : [];
+    if (d.type === "receipt") {
+      let sum = 0;
+      for (const l of lines) {
+        const q = +l.qty || 0, p = +l.price || 0, nq = Math.max(0, net.get(l.item) || 0), a = avg.get(l.item) || 0;
+        avg.set(l.item, nq + q > 0 ? (nq * a + q * p) / (nq + q) : p);
+        addNet(l.item, q); add(d.to, l.item, q); sum += q * p;
+        moves.push({date:d.date, doc:d, type:"receipt", item:l.item, store:d.to, q, cost:q * p});
+      }
+      supp.push({date:d.date, supplier:d.supplier, inc:sum, paid:0, doc:d});
+    } else if (d.type === "transfer") {
+      for (const l of lines) {
+        const q = +l.qty || 0, c = q * (avg.get(l.item) || 0);
+        add(d.from, l.item, -q); add(d.to, l.item, q);
+        moves.push({date:d.date, doc:d, type:"transfer", item:l.item, store:d.from, q:-q, cost:-c});
+        moves.push({date:d.date, doc:d, type:"transfer", item:l.item, store:d.to, q, cost:c});
+      }
+    } else if (d.type === "sale" || d.type === "writeoff") {
+      for (const l of lines) {
+        const q = +l.qty || 0, unit = avg.get(l.item) || +(itemOf(l.item)?.buy) || 0;
+        const sum = d.type === "sale" ? (l.sum !== undefined && l.sum !== "" ? +l.sum : q * (+l.price || 0)) : 0;
+        let c = q * unit, src = unit ? "cost" : "none";
+        if (!unit) { const mk = markupOf(l.item); if (mk !== null) { c = (d.type === "sale" ? sum : q * (+(itemOf(l.item)?.price) || 0)) / (1 + mk / 100); src = "markup"; } }
+        add(d.from, l.item, -q); addNet(l.item, -q);
+        moves.push({date:d.date, doc:d, type:d.type, item:l.item, store:d.from, q:-q, cost:-c, sum, cogs:c, src});
+      }
+    } else if (d.type === "inventory") {
+      for (const l of lines) {
+        const cur = stock.get(K(d.from, l.item)) || 0, diff = num(l.fact) - cur;
+        if (Math.abs(diff) < 1e-9) continue;
+        add(d.from, l.item, diff); addNet(l.item, diff);
+        moves.push({date:d.date, doc:d, type:"inventory", item:l.item, store:d.from, q:diff, cost:diff * (avg.get(l.item) || 0)});
+      }
+    } else if (d.type === "payment") {
+      supp.push({date:d.date, supplier:d.supplier, inc:0, paid:+d.amount || 0, doc:d});
+    }
+  }
+  L = {stock, avg, moves, supp, K}; Lver = ver; return L;
+}
+const stockOf = (store, item) => ledger().stock.get(store + "|" + item) || 0;
+const itemStockTotal = item => { let t = 0; for (const s of S.stores) t += stockOf(s.id, item); return t; };
+const inPeriod = d => d >= ui.from && d <= ui.to;
+function salesIn(storeFilter){
+  return ledger().moves.filter(m => m.type === "sale" && inPeriod(m.date) && (!storeFilter || storeFilter === "all" || m.store === storeFilter));
+}
+function debtNow(){ const t = new Map(); for (const s of ledger().supp) t.set(s.supplier, (t.get(s.supplier) || 0) + s.inc - s.paid); return t; }
+
+/* ---------- documents ---------- */
+function nextNum(type){
+  const pre = TYPES[type].pre; let max = 0;
+  for (const d of S.docs) if (d.type === type) { const n = parseInt(String(d.num || "").split("-")[1], 10); if (n > max) max = n; }
+  return pre + "-" + String(max + 1).padStart(5, "0");
+}
+function docTotal(d){
+  if (d.type === "payment" || d.type === "expense" || d.type === "money") return +d.amount || 0;
+  if (d.type === "payroll") return +d.total || (d.lines || []).reduce((t, l) => t + (+l.accrued || 0), 0);
+  let t = 0;
+  for (const l of d.lines || []) {
+    if (!l.item) continue;
+    if (d.type === "sale" && l.sum !== undefined && l.sum !== "") t += +l.sum;
+    else if (d.type === "receipt" || d.type === "sale") t += (+l.qty || 0) * (+l.price || 0);
+    else if (d.type === "inventory") t += num(l.fact) * (itemOf(l.item)?.price || 0);
+    else t += (+l.qty || 0) * (itemOf(l.item)?.price || 0);
+  }
+  return r2(t);
+}
+function docRoute(d){
+  if (d.type === "receipt") return "→ " + storeName(d.to);
+  if (d.type === "transfer") return storeName(d.from) + " → " + storeName(d.to);
+  if (d.type === "payment") return d.account ? accName(d.account) : "";
+  if (d.type === "expense") return (byId("articles", d.article)?.name || "—") + " · " + (d.store ? storeName(d.store) : "общий");
+  if (d.type === "money") return d.op === "transfer" ? accName(d.accFrom) + " → " + accName(d.accTo) : (d.source || "") + " → " + accName(d.accTo);
+  if (d.type === "writeoff") return storeName(d.from) + " · " + woReason(d);
+  if (d.type === "payroll") return monthName(d.month || "") + " · " + (d.lines || []).length + " сотр.";
+  return storeName(d.from);
+}
+
+/* ---------- rendering ---------- */
+const NAV = [
+  ["Главное", [["dash", "Рабочий стол"], ["r-director", "Панель директора"]]],
+  ["Товары", [["r-stock", "Остатки товаров"], ["j:receipt", "Поступления"], ["j:transfer", "Перемещения"], ["j:sale", "Продажи (смены)"], ["j:writeoff", "Списания"], ["j:inventory", "Инвентаризации"]]],
+  ["Деньги", [["j:expense", "Расходы"], ["j:money", "Движение денег"], ["j:payment", "Оплаты поставщикам"]]],
+  ["Персонал", [["schedule", "График работы"], ["j:payroll", "Начисление зарплаты"], ["employees", "Сотрудники"]]],
+  ["Отчёты", [["r-pnl", "Прибыль по ТТ"], ["r-money", "Денежные средства"], ["r-sales", "Продажи и прибыль"], ["r-stock", "Остатки товаров"], ["r-abc", "ABC-анализ"], ["r-card", "Карточка товара"], ["r-supp", "Расчёты с поставщиками"]]],
+  ["Справочники", [["items", "Номенклатура"], ["markups", "Наценки по группам"], ["stores", "Магазины и склады"], ["orgs", "Организации"], ["owners", "Принадлежность точек"], ["accounts", "Кассы и счета"], ["articles", "Статьи расходов"], ["suppliers", "Поставщики"]]],
+  ["Обработки", [["import", "Импорт из Checkbox"], ["bank", "Загрузка банка"], ["j:all", "Журнал документов"], ["service", "Данные и настройки"]]],
+];
+function navCount(k){
+  if (k === "items") return S.items.length;
+  if (k === "stores") return S.stores.length;
+  if (k === "suppliers") return S.suppliers.length;
+  if (["orgs", "accounts", "articles", "employees", "owners"].includes(k)) return S[k].length;
+  if (k === "j:all") return S.docs.length;
+  if (k.startsWith("j:")) return S.docs.filter(d => d.type === k.slice(2)).length;
+  return "";
+}
+function renderRail(){
+  const m = mode === "db" ? (window.__desktop ? `<span class="dot ok"></span>Локальная база · этот компьютер` : `<span class="dot ok"></span>Общая база · ${canWrite ? "запись разрешена" : "только просмотр"}`)
+          : mode === "local" ? `<span class="dot loc"></span>Демо-режим: данные не сохраняются` : `<span class="dot"></span>Подключение…`;
+  $("#rail").innerHTML = `<div class="brand"><b>Учёт ТТ</b><small>Розничная сеть · склад и точки</small></div>` +
+    NAV.map(([h, items]) => `<div class="nav-h">${h}</div><nav class="nav">${items.map(([k, t]) => `<a data-go="${k}" class="${ui.view === k ? "on" : ""}" href="#">${t}<span class="cnt">${navCount(k)}</span></a>`).join("")}</nav>`).join("") +
+    `<div class="mode">${m}</div>`;
+}
+function top(title, sub, actions){
+  return `<div class="top"><div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="actions">${actions || ""}</div></div>`;
+}
+function periodCtl(){
+  const t = today();
+  const presets = [["Сегодня", t, t], ["7 дней", addDays(t, -6), t], ["Месяц", t.slice(0, 8) + "01", t], ["30 дней", addDays(t, -29), t]];
+  return `<div class="seg">${presets.map(([n, f, to]) => `<button data-period="${f}|${to}" class="${ui.from === f && ui.to === to ? "on" : ""}">${n}</button>`).join("")}</div>
+    <input type="date" id="pf" value="${ui.from}" aria-label="С даты"> <span class="muted">—</span> <input type="date" id="pt" value="${ui.to}" aria-label="По дату">`;
+}
+function storeSelect(id, val, withAll, onlyRetail){
+  const list = onlyRetail ? retail() : sortedStores();
+  return `<select id="${id}">${withAll ? `<option value="all">Все точки</option>` : ""}${list.map(s => `<option value="${s.id}" ${s.id === val ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select>`;
+}
+const csvBtn = () => dl ? `<button class="btn" data-act="csv">Выгрузить в Excel (CSV)</button>` : "";
+const demoBanner = () => mode === "local" ? `<div class="banner"><span>Общая база недоступна в этом окне (нужно войти в аккаунт claude.ai), поэтому показаны примерные данные. Изменения пропадут после закрытия страницы.</span></div>` : "";
+const writeLock = () => (!canWrite && mode === "db") ? `<div class="banner"><span>У вас доступ только для просмотра. Чтобы вносить документы, попросите владельца дать доступ «Участник».</span></div>` : "";
+
+function render(){
+  renderRail();
+  const v = ui.view, M = $("#main");
+  lastTable = null;
+  if (mode === "loading" || (mode === "db" && loaded.size < COLS.length)) { M.innerHTML = `<div class="empty"><b>Загрузка базы…</b>Подключаемся к данным учёта.</div>`; return; }
+  let h = demoBanner() + writeLock();
+  if (mode === "db" && !S.items.length && !S.docs.length && v === "dash") h += onboarding();
+  else if (v === "dash") h += vDash();
+  else if (v.startsWith("j:")) h += vJournal(v.slice(2));
+  else if (v === "items") h += vItems();
+  else if (v === "stores") h += vStores();
+  else if (v === "suppliers") h += vSuppliers();
+  else if (v === "r-stock") h += vStock();
+  else if (v === "r-sales") h += vSales();
+  else if (v === "r-abc") h += vAbc();
+  else if (v === "r-card") h += vCard();
+  else if (v === "r-supp") h += vSupp();
+  else if (v === "service") h += vService();
+  else if (v === "import") h += vImport();
+  else if (v === "markups") h += vMarkups();
+  else if (REFS[v]) h += vRef(v);
+  else if (v === "owners") h += vOwners();
+  else if (v === "schedule") h += vSchedule();
+  else if (v === "r-money") h += vMoney();
+  else if (v === "r-pnl") h += vPnl();
+  else if (v === "r-director") h += vDirector();
+  else if (v === "bank") h += vBank();
+  M.innerHTML = h;
+}
+
+function onboarding(){
+  return top("Добро пожаловать в Учёт ТТ", "База пока пустая") + `<div class="card"><div class="empty">
+    <b>С чего начать</b>
+    <p>Магазины уже заведены (${S.stores.length}). Добавьте товары в «Номенклатуру» и проведите первое «Поступление» на склад —<br>или загрузите демонстрационные данные, чтобы посмотреть, как всё работает. Их потом можно удалить одной кнопкой.</p>
+    <div class="actions" style="justify-content:center;margin-top:14px">
+      <button class="btn pri" data-act="demo-load" ${canWrite ? "" : "disabled"}>Загрузить демо-данные</button>
+      <button class="btn" data-go="import">Загрузить продажи из Checkbox</button><button class="btn" data-go="items">Добавить товары</button>
+      <button class="btn" data-go="stores">Проверить магазины</button>
+    </div></div></div>`;
+}
+
+/* ---- dashboard ---- */
+function vDash(){
+  const sales = salesIn("all");
+  const rev = sales.reduce((a, m) => a + m.sum, 0), cogs = sales.reduce((a, m) => a + m.cogs, 0);
+  const L0 = ledger(); let stockVal = 0;
+  for (const [k, q] of L0.stock) { const it = k.split("|")[1]; if (q > 0) stockVal += q * (L0.avg.get(it) || 0); }
+  let debt = 0; for (const v of debtNow().values()) debt += v;
+  const days = Math.max(1, Math.round((new Date(ui.to) - new Date(ui.from)) / 864e5) + 1);
+  // daily
+  const byDay = new Map(); for (let i = 0; i < days; i++) byDay.set(addDays(ui.from, i), 0);
+  for (const m of sales) byDay.set(m.date, (byDay.get(m.date) || 0) + m.sum);
+  const byStore = new Map(); for (const m of sales) byStore.set(m.store, (byStore.get(m.store) || 0) + m.sum);
+  const stRows = [...byStore].sort((a, b) => b[1] - a[1]); const maxS = Math.max(1, ...stRows.map(x => x[1]));
+  // low stock
+  const low = [];
+  for (const s of retail()) for (const it of S.items) { const mn = +it.min || 0; if (!mn) continue; const q = stockOf(s.id, it.id); if (q < mn) low.push({s, it, q, mn}); }
+  low.sort((a, b) => (a.q / a.mn) - (b.q / b.mn));
+  const recent = S.docs.slice().sort((a, b) => (b.created || 0) - (a.created || 0)).slice(0, 8);
+  return top("Рабочий стол", `Период: ${dfmt(ui.from)} — ${dfmt(ui.to)}`, periodCtl()) + `
+  <div class="kpis">
+    <div class="card kpi"><div class="l">Выручка</div><div class="v">${money0(rev)} ₴</div><div class="s">${(() => { const sd = new Set(sales.map(m => m.date)).size; return sd ? `${money0(rev / sd)} ₴ в день · данные за ${sd} из ${days} дн.` : "нет продаж за период"; })()}${new Set(sales.map(m => m.date)).size < days ? ` · <a href="#" data-go="import" style="color:var(--accent)">загрузить из Checkbox</a>` : ""}</div></div>
+    <div class="card kpi"><div class="l">Валовая прибыль</div><div class="v">${money0(rev - cogs)} ₴</div><div class="s">${(() => { const noCost = new Set(sales.filter(m => m.src === "none").map(m => m.item)).size; const byMk = sales.some(m => m.src === "markup"); return noCost ? `<span class="warn">Нет закупочной цены и наценки группы у ${noCost} проданных товаров — прибыль завышена.</span> <a href="#" data-go="markups" style="color:var(--accent)">Задать наценки</a>` : byMk ? `Маржа ${pct(rev ? (rev - cogs) / rev * 100 : NaN)} · часть себестоимости по наценкам групп` : `Маржа ${pct(rev ? (rev - cogs) / rev * 100 : NaN)}`; })()}</div></div>
+    <div class="card kpi"><div class="l">Товар на остатках</div><div class="v">${money0(stockVal)} ₴</div><div class="s">по себестоимости, вся сеть</div></div>
+    <div class="card kpi"><div class="l">Долг поставщикам</div><div class="v ${debt > 0 ? "warn" : ""}">${money0(debt)} ₴</div><div class="s"><a href="#" data-go="r-supp" style="color:var(--accent)">Расчёты с поставщиками</a></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Выручка по дням</h3><div class="pad chart">${lineChart([...byDay])}</div></div>
+    <div class="card"><h3>Выручка по точкам</h3><div class="pad">${stRows.length ? `<div class="bars">${stRows.map(([id, v]) => `<div class="bar"><span class="nm" title="${esc(storeName(id))}">${esc(storeName(id))}</span><span class="tr"><span class="fl" style="display:block;width:${(v / maxS * 100).toFixed(1)}%"></span></span><span class="num">${money0(v)} ₴</span></div>`).join("")}</div>` : `<div class="muted">Нет продаж за период.</div>`}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Последние документы</h3><div class="pad list">${recent.length ? recent.map(d => `<div class="row" data-open="${d.id}"><span><span class="pill ${d.posted ? "ok" : "draft"}">${d.posted ? "✓" : "черн."}</span> ${esc(TYPES[d.type]?.short || "")} <b>${esc(d.num)}</b> <span class="muted">от ${dfmt(d.date)} · ${esc(docRoute(d) || suppName(d.supplier))}</span></span><span class="num">${money(docTotal(d))}</span></div>`).join("") : `<div class="muted">Документов пока нет.</div>`}</div></div>
+    <div class="card"><h3>Заканчивается в точках</h3><div class="pad list">${low.length ? low.slice(0, 10).map(x => `<div class="row" data-go="r-stock"><span>${esc(x.it.name)} <span class="muted">· ${esc(x.s.name)}</span></span><span class="num ${x.q <= 0 ? "neg" : "warn"}">${qtyf(x.q)} из ${qtyf(x.mn)} ${esc(x.it.unit || "")}</span></div>`).join("") + (low.length > 10 ? `<div class="hint" style="padding-top:8px">И ещё ${low.length - 10} позиций — смотрите отчёт «Остатки».</div>` : "") : `<div class="muted">Всё в норме. Минимальный остаток задаётся в карточке товара.</div>`}</div></div>
+  </div>`;
+}
+function lineChart(pts){
+  if (!pts.length) return "";
+  const W = 640, H = 200, pl = 52, pr = 12, pt = 12, pb = 26;
+  const max = Math.max(...pts.map(p => p[1]), 1);
+  const step = Math.pow(10, Math.floor(Math.log10(max))); let top = Math.ceil(max / step) * step; if (top / step > 6) top = Math.ceil(max / (step * 2)) * step * 2;
+  const x = i => pl + (pts.length === 1 ? (W - pl - pr) / 2 : i * (W - pl - pr) / (pts.length - 1));
+  const y = v => pt + (H - pt - pb) * (1 - v / top);
+  const ticks = [0, top / 2, top];
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
+  const area = line + `L${x(pts.length - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z`;
+  const every = Math.max(1, Math.ceil(pts.length / 7));
+  const last = pts.length - 1;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Выручка по дням">
+    ${ticks.map(t => `<line x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${pl - 8}" y="${y(t) + 4}" text-anchor="end">${money0(t)}</text>`).join("")}
+    <path d="${area}" fill="var(--accent)" fill-opacity=".12"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    ${pts.map((p, i) => (i % every === 0 || i === last) && (i === last || last - i >= every / 2) ? `<text x="${x(i)}" y="${H - 7}" text-anchor="middle">${p[0].slice(8, 10)}.${p[0].slice(5, 7)}</text>` : "").join("")}
+    <circle cx="${x(last)}" cy="${y(pts[last][1])}" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>
+  </svg>`;
+}
+
+/* ---- journal ---- */
+function vJournal(type){
+  const t = type === "all" ? null : TYPES[type];
+  let docs = S.docs.filter(d => (!t || d.type === type) && inPeriod(d.date));
+  const isTr = type === "transfer";
+  if (isTr) { if (ui.jFrom !== "all") docs = docs.filter(d => d.from === ui.jFrom); if (ui.jTo !== "all") docs = docs.filter(d => d.to === ui.jTo); }
+  else if (ui.jStore !== "all") docs = docs.filter(d => d.from === ui.jStore || d.to === ui.jStore || d.store === ui.jStore);
+  const suppFilter = !t || type === "receipt" || type === "payment";
+  if (type === "writeoff" && ui.jReason !== "all") docs = docs.filter(d => woReason(d) === ui.jReason);
+  if (suppFilter && ui.jSupp && ui.jSupp !== "all") docs = docs.filter(d => ui.jSupp === "none" ? !d.supplier && (d.type === "receipt" || d.type === "payment") : d.supplier === ui.jSupp);
+  const q = ui.jSearch.trim().toLowerCase();
+  if (q) docs = docs.filter(d => (d.num + " " + (d.note || "") + " " + suppName(d.supplier)).toLowerCase().includes(q));
+  docs.sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.created || 0) - (a.created || 0));
+  const total = docs.reduce((a, d) => a + docTotal(d), 0);
+  const create = (type === "sale" ? `<button class="btn" data-go="import">Загрузить из Checkbox</button>` : "") + (type === "receipt" && canWrite ? `<label class="btn">Поступление с фото накладной<input type="file" id="photofile" accept="image/*" multiple hidden></label>` : "") + (t ? `<button class="btn pri" data-new="${type}" ${canWrite ? "" : "disabled"}>Создать: ${t.short.toLowerCase()}</button>`
+    : Object.entries(TYPES).map(([k, x]) => `<button class="btn ${k === "sale" ? "pri" : ""}" data-new="${k}" ${canWrite ? "" : "disabled"}>+ ${x.short}</button>`).join(""));
+  lastTable = {name: t ? t.plural : "Журнал документов", head:["Дата","Номер","Вид","Статус","Откуда / куда","Поставщик","Сумма","Комментарий"],
+    rows: docs.map(d => [dfmt(d.date), d.num, TYPES[d.type]?.short, d.posted ? "Проведён" : "Черновик", docRoute(d), d.supplier ? suppName(d.supplier) : "", docTotal(d), d.note || ""])};
+  return top(t ? t.plural : "Журнал документов", `${docs.length} док. за период · сумма ${money(total)} ₴`, create) + `
+  <div class="filters">${periodCtl()} ${isTr ? `<label>Откуда<select id="jfrom"><option value="all">Все точки</option>${sortedStores().map(x => `<option value="${x.id}" ${x.id === ui.jFrom ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label> <label>Куда<select id="jto"><option value="all">Все точки</option>${sortedStores().map(x => `<option value="${x.id}" ${x.id === ui.jTo ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : storeSelect("jstore", ui.jStore, true)} ${type === "writeoff" ? `<label>Причина<select id="jreason"><option value="all">Все причины</option>${WO_REASONS.map(x => `<option ${x === ui.jReason ? "selected" : ""}>${x}</option>`).join("")}</select></label>` : ""} ${suppFilter ? `<select id="jsupp" aria-label="Поставщик"><option value="all">Все поставщики</option>${S.suppliers.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "", "ru")).map(x => `<option value="${x.id}" ${x.id === ui.jSupp ? "selected" : ""}>${esc(x.name)}</option>`).join("")}<option value="none" ${ui.jSupp === "none" ? "selected" : ""}>Без поставщика</option></select>` : ""} <input type="search" id="jsearch" placeholder="Номер, поставщик, комментарий" value="${esc(ui.jSearch)}"> ${csvBtn()}</div>
+  ${docs.length ? `<div class="tbl"><table><thead><tr><th>Дата</th><th>Номер</th><th>Вид</th><th>Статус</th><th>Откуда / куда</th><th>Поставщик</th><th class="n">Сумма, ₴</th><th>Комментарий</th></tr></thead><tbody>
+    ${docs.slice(0, 500).map(d => `<tr class="click" data-open="${d.id}"><td>${dfmt(d.date)}</td><td><b>${esc(d.num)}</b></td><td>${esc(TYPES[d.type]?.short || "")}</td><td><span class="pill ${d.posted ? "ok" : "draft"}">${d.posted ? "Проведён" : "Черновик"}</span></td><td>${esc(docRoute(d))}</td><td>${d.supplier ? esc(suppName(d.supplier)) : ""}</td><td class="n">${money(docTotal(d))}</td><td class="muted">${esc(d.note || "")}</td></tr>`).join("")}
+  </tbody></table></div>${docs.length > 500 ? `<div class="hint" style="margin-top:8px">Показаны первые 500. Сузьте период или фильтр.</div>` : ""}`
+  : `<div class="card"><div class="empty"><b>За период документов нет</b>Измените период или создайте документ кнопкой справа вверху.</div></div>`}`;
+}
+
+/* ---- items ---- */
+function vItems(){
+  let items = sortedItems();
+  if (ui.itemGroup !== "all") items = items.filter(i => (i.group || "Без группы") === ui.itemGroup);
+  const q = ui.itemSearch.trim().toLowerCase();
+  if (q) items = items.filter(i => ((i.name || "") + " " + (i.barcode || "")).toLowerCase().includes(q));
+  const L0 = ledger();
+  lastTable = {name:"Номенклатура", head:["Наименование","Группа","Ед.","Штрихкод","Закупка","Себестоимость","Розница","Наценка %","Остаток","Мин. остаток"],
+    rows: items.map(i => [i.name, i.group, i.unit, i.barcode || "", +i.buy || 0, r2(L0.avg.get(i.id) || 0), +i.price || 0, i.buy ? r2((i.price - i.buy) / i.buy * 100) : "", r2(itemStockTotal(i.id)), +i.min || 0])};
+  return top("Номенклатура", `${S.items.length} товаров в ${groups().length} группах`,
+    `<button class="btn" data-act="reprice" ${canWrite && S.items.length ? "" : "disabled"}>Цены по наценке</button><button class="btn pri" data-act="item-new" ${canWrite ? "" : "disabled"}>Новый товар</button>`) + `
+  <div class="filters"><select id="igroup"><option value="all">Все группы</option>${groups().map(g => `<option ${g === ui.itemGroup ? "selected" : ""}>${esc(g)}</option>`).join("")}</select>
+  <input type="search" id="isearch" placeholder="Название или штрихкод" value="${esc(ui.itemSearch)}"> ${csvBtn()}</div>
+  ${items.length ? `<div class="tbl"><table><thead><tr><th>Наименование</th><th>Группа</th><th>Ед.</th><th>Штрихкод</th><th class="n">Закупка</th><th class="n">Себестоимость</th><th class="n">Розница</th><th class="n">Наценка</th><th class="n">Остаток (сеть)</th></tr></thead><tbody>
+  ${items.map(i => { const st = itemStockTotal(i.id), mk = i.buy ? (i.price - i.buy) / i.buy * 100 : NaN;
+    return `<tr class="click" data-item="${i.id}"><td><b>${esc(i.name)}</b></td><td>${esc(i.group || "")}</td><td>${esc(i.unit || "")}</td><td class="muted">${esc(i.barcode || "")}</td><td class="n">${money(i.buy)}</td><td class="n muted">${money(L0.avg.get(i.id) || 0)}</td><td class="n"><b>${money(i.price)}</b></td><td class="n ${mk < 15 ? "warn" : ""}">${pct(mk)}</td><td class="n ${st < 0 ? "neg" : ""}">${qtyf(st)} ${esc(i.unit || "")}</td></tr>`; }).join("")}
+  </tbody></table></div>` : `<div class="card"><div class="empty"><b>Товаров нет</b>Нажмите «Новый товар», чтобы добавить первую позицию.</div></div>`}`;
+}
+
+/* ---- stores ---- */
+function vStores(){
+  const L0 = ledger(), now = salesInRange(addDays(today(), -29), today());
+  return top("Магазины и склады", "Точки продаж и склады сети", `<button class="btn pri" data-act="store-new" ${canWrite ? "" : "disabled"}>Добавить точку</button>`) + `
+  <div class="tbl"><table><thead><tr><th>Название</th><th>Тип</th><th>Адрес</th><th>Фискальный номер ПРРО</th><th class="n">Товар на остатке (себест.)</th><th class="n">Выручка за 30 дней</th></tr></thead><tbody>
+  ${sortedStores().map(s => { let v = 0; for (const it of S.items) { const q = stockOf(s.id, it.id); if (q > 0) v += q * (L0.avg.get(it.id) || 0); }
+    const rv = now.filter(m => m.store === s.id).reduce((a, m) => a + m.sum, 0);
+    return `<tr class="click" data-store="${s.id}"><td><b>${esc(s.name)}</b></td><td><span class="pill ${s.kind === "warehouse" ? "t" : "draft"}">${s.kind === "warehouse" ? "Склад" : "Магазин"}</span></td><td>${esc(s.address || "")}</td><td class="muted">${esc(s.prro || "")}</td><td class="n">${money(v)}</td><td class="n">${s.kind === "warehouse" ? "—" : money(rv)}</td></tr>`; }).join("") || `<tr><td colspan="6" class="muted">Точек нет.</td></tr>`}
+  </tbody></table></div>`;
+}
+function salesInRange(f, t){ return ledger().moves.filter(m => m.type === "sale" && m.date >= f && m.date <= t); }
+
+/* ---- suppliers ---- */
+function vSuppliers(){
+  const debt = debtNow();
+  return top("Поставщики", "Контрагенты для поступлений и оплат", `<button class="btn pri" data-act="supp-new" ${canWrite ? "" : "disabled"}>Добавить поставщика</button>`) + `
+  <div class="tbl"><table><thead><tr><th>Название</th><th>ЄДРПОУ</th><th>Телефон</th><th>Комментарий</th><th class="n">Наш долг, ₴</th></tr></thead><tbody>
+  ${S.suppliers.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "", "ru")).map(s => { const d = debt.get(s.id) || 0;
+    return `<tr class="click" data-supp="${s.id}"><td><b>${esc(s.name)}</b></td><td>${esc(s.edrpou || "")}</td><td>${esc(s.phone || "")}</td><td class="muted">${esc(s.note || "")}</td><td class="n ${d > 0 ? "warn" : ""}">${money(d)}</td></tr>`; }).join("") || `<tr><td colspan="5" class="muted">Поставщиков нет.</td></tr>`}
+  </tbody></table></div>`;
+}
+
+/* ---- markups by group ---- */
+function vMarkups(){
+  const M = markups();
+  if (!ui.mkDraft) ui.mkDraft = {};
+  const draft = ui.mkDraft, sales = salesIn("all");
+  const agg = new Map();
+  for (const g of groups()) agg.set(gkey(g), {n: 0, rev: 0, cogs: 0, costItems: 0});
+  for (const it of S.items) { const a = agg.get(gkey(it.group)); if (a) a.n++; }
+  const L0 = ledger();
+  for (const m of sales) { const g = gkey(itemOf(m.item)?.group); const a = agg.get(g) || {n:0, rev:0, cogs:0}; a.rev += m.sum; if (m.src === "cost") a.cogs += m.cogs, a.costRev = (a.costRev || 0) + m.sum; agg.set(g, a); }
+  const rows = [...agg].map(([g, a]) => { const mk = draft[g] !== undefined ? draft[g] : (M[g] ?? ""); const m = mk === "" ? null : num(mk);
+    const markupRev = a.rev - (a.costRev || 0); const cogs = a.cogs + (m !== null ? markupRev / (1 + m / 100) : 0); return {g, a, mk, m, cogs, inc: a.rev - cogs}; })
+    .sort((x, y) => y.a.rev - x.a.rev || x.g.localeCompare(y.g, "ru"));
+  const T = rows.reduce((t, r) => ({rev: t.rev + r.a.rev, cogs: t.cogs + r.cogs}), {rev: 0, cogs: 0});
+  const dirty = Object.keys(draft).length > 0, missing = rows.filter(r => r.m === null && r.a.rev > 0).length;
+  lastTable = {name: "Наценки по группам", head: ["Группа", "Товаров", "Выручка", "Наценка %", "Себестоимость", "Доход", "Маржа %"],
+    rows: rows.map(r => [r.g, r.a.n, r2(r.a.rev), r.m ?? "", r2(r.cogs), r2(r.inc), r.a.rev ? r2(r.inc / r.a.rev * 100) : ""])};
+  return top("Наценки по группам", `Себестоимость = выручка / (1 + наценка). Применяется к товарам без закупочной цены · период ${dfmt(ui.from)} — ${dfmt(ui.to)}`,
+    `<button class="btn" data-act="mk-reset" ${dirty ? "" : "disabled"}>Отменить</button><button class="btn pri" data-act="mk-save" ${canWrite && dirty ? "" : "disabled"}>Сохранить наценки</button>` + csvBtn()) + `
+  <div class="filters">${periodCtl()}${missing ? ` <span class="warn hint">Не задана наценка у ${missing} групп с продажами — по ним прибыль считается равной выручке.</span>` : ""}</div>
+  <div class="tbl"><table><thead><tr><th>Группа</th><th class="n">Товаров</th><th class="n">Выручка, ₴</th><th class="n">Наценка, %</th><th class="n">Себестоимость, ₴</th><th class="n">Доход, ₴</th><th class="n">Маржа</th></tr></thead><tbody>
+  ${rows.map((r, i) => `<tr><td><b>${esc(r.g)}</b>${draft[r.g] !== undefined ? ` <span class="pill b">изменено</span>` : ""}</td><td class="n">${r.a.n}</td><td class="n">${money(r.a.rev)}</td>
+    <td class="n"><input class="q" style="max-width:90px;text-align:right" type="number" step="0.1" min="0" id="mk_${i}" data-mkg="${esc(r.g)}" value="${esc(r.mk)}" placeholder="—" aria-label="Наценка ${esc(r.g)}" ${canWrite ? "" : "disabled"}></td>
+    <td class="n muted">${money(r.cogs)}</td><td class="n">${money(r.inc)}</td><td class="n ${r.m === null && r.a.rev ? "warn" : ""}">${r.a.rev ? pct(r.inc / r.a.rev * 100) : "—"}</td></tr>`).join("")}
+  <tr class="tot"><td>Итого</td><td></td><td class="n">${money(T.rev)}</td><td></td><td class="n">${money(T.cogs)}</td><td class="n">${money(T.rev - T.cogs)}</td><td class="n">${pct(T.rev ? (T.rev - T.cogs) / T.rev * 100 : NaN)}</td></tr>
+  </tbody></table></div>
+  <div class="hint" style="margin-top:8px">Если у товара есть закупочная цена (из поступлений или в карточке товара), прибыль считается по ней, а наценка группы не используется. Изменение наценки сразу пересчитывает прибыль во всех отчётах.</div>`;
+}
+
+/* ---- report: stock ---- */
+function itemSuppliers(){
+  const m = new Map(), add = (i, sp) => { if (!sp) return; if (!m.has(i)) m.set(i, new Set()); m.get(i).add(sp); };
+  for (const it of S.items) add(it.id, it.supplier);
+  for (const d of S.docs) if (d.type === "receipt" && d.posted) for (const l of d.lines || []) add(l.item, d.supplier);
+  return m;
+}
+function vStock(){
+  const L0 = ledger(), allStores = sortedStores();
+  const stores = ui.stockStore === "all" ? allStores : allStores.filter(s => s.id === ui.stockStore);
+  const sup = itemSuppliers(), words = srchNorm(ui.stockSearch).split(" ").filter(Boolean);
+  let items = sortedItems();
+  if (ui.stockGroup !== "all") items = items.filter(i => (i.group || "Без группы") === ui.stockGroup);
+  if (ui.stockSupp === "none") items = items.filter(i => !sup.has(i.id));
+  else if (ui.stockSupp !== "all") items = items.filter(i => sup.get(i.id)?.has(ui.stockSupp));
+  if (words.length) items = items.filter(i => { const h = srchNorm(i.name) + " " + String(i.cbCode || "") + " " + String(i.barcode || ""); return words.every(w => h.includes(w)); });
+  const val = (it, q) => ui.stockMode === "qty" ? q : ui.stockMode === "cost" ? q * (L0.avg.get(it.id) || 0) : q * (+it.price || 0);
+  const f = ui.stockMode === "qty" ? qtyf : money;
+  const qmin = ui.stockQmin === "" ? null : num(ui.stockQmin), qmax = ui.stockQmax === "" ? null : num(ui.stockQmax);
+  const rows = []; const tot = stores.map(() => 0); let gt = 0;
+  for (const it of items) {
+    const qs = stores.map(s => stockOf(s.id, it.id)), qt = qs.reduce((a, b) => a + b, 0), z = x => Math.abs(x) < 1e-9;
+    const mn = +it.min || 0;
+    const c = ui.stockQty;
+    if (c === "nonzero" && qs.every(z)) continue;
+    if (c === "pos" && !(qt > 1e-9)) continue;
+    if (c === "zero" && !z(qt)) continue;
+    if (c === "neg" && !(qt < -1e-9)) continue;
+    if (c === "low" && !(mn && stores.some(s => s.kind !== "warehouse" && stockOf(s.id, it.id) < mn))) continue;
+    if (qmin !== null && qt < qmin - 1e-9) continue;
+    if (qmax !== null && qt > qmax + 1e-9) continue;
+    const vs = qs.map(q => val(it, q)); const t = vs.reduce((a, b) => a + b, 0);
+    vs.forEach((v, i) => tot[i] += v); gt += t;
+    rows.push({it, qs, vs, t});
+  }
+  const one = stores.length === 1;
+  lastTable = {name:"Остатки товаров", head:["Товар","Группа","Ед.","Поставщик", ...stores.map(s => s.name), ...(one ? [] : ["Итого"])],
+    rows: rows.map(r => [r.it.name, r.it.group, r.it.unit, [...(sup.get(r.it.id) || [])].map(suppName).join(", "), ...r.vs.map(r2), ...(one ? [] : [r2(r.t)])])};
+  const modeName = {qty:"количество", cost:"сумма по себестоимости, ₴", price:"сумма в розничных ценах, ₴"}[ui.stockMode];
+  const active = ui.stockStore !== "all" || ui.stockGroup !== "all" || ui.stockSupp !== "all" || ui.stockSearch || ui.stockQty !== "nonzero" || ui.stockQmin !== "" || ui.stockQmax !== "";
+  const supList = sortedBy("suppliers");
+  return top("Остатки товаров", `На текущий момент · ${modeName} · найдено ${rows.length} из ${S.items.length} товаров`, csvBtn()) + `
+  <div class="filters"><div class="seg">${[["qty","Количество"],["cost","Себестоимость"],["price","Розница"]].map(([k, n]) => `<button data-smode="${k}" class="${ui.stockMode === k ? "on" : ""}">${n}</button>`).join("")}</div></div>
+  <div class="card pad" style="margin-bottom:12px"><div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));align-items:end">
+    <label>Наименование<input type="search" id="ssearch" placeholder="Название, код, штрихкод" value="${esc(ui.stockSearch)}"></label>
+    <label>Магазин / склад<select id="sstore"><option value="all">Все точки</option>${allStores.map(x => `<option value="${x.id}" ${x.id === ui.stockStore ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
+    <label>Группа<select id="sgroup"><option value="all">Все группы</option>${groups().map(g => `<option ${g === ui.stockGroup ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></label>
+    <label>Поставщик<select id="ssupp"><option value="all">Все поставщики</option>${supList.map(x => `<option value="${x.id}" ${x.id === ui.stockSupp ? "selected" : ""}>${esc(x.name)}</option>`).join("")}<option value="none" ${ui.stockSupp === "none" ? "selected" : ""}>Без поставщика</option></select></label>
+    <label>Количество<select id="sqty">${[["nonzero","Все с движением"],["all","Все товары, включая нулевые"],["pos","Есть в наличии (> 0)"],["zero","Нет в наличии (= 0)"],["neg","Отрицательные (< 0)"],["low","Ниже минимального остатка"]].map(([k, n]) => `<option value="${k}" ${ui.stockQty === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <label>Остаток от<input type="number" step="0.001" id="sqmin" value="${esc(ui.stockQmin)}" placeholder="—"></label>
+    <label>Остаток до<input type="number" step="0.001" id="sqmax" value="${esc(ui.stockQmax)}" placeholder="—"></label>
+    <div><button class="btn" data-e="stock-reset" ${active ? "" : "disabled"}>Сбросить фильтры</button></div>
+  </div>${!supList.length ? `<div class="hint" style="margin-top:8px">Поставщиков пока нет. Поставщик товара берётся из проведённых поступлений или из поля «Основной поставщик» в карточке товара.</div>` : ""}
+  <div class="hint" style="margin-top:6px">Фильтр по количеству и «от / до» считаются по ${one ? "выбранной точке" : "сумме всех точек"}.</div></div>
+  ${rows.length ? `<div class="tbl"><table><thead><tr><th>Товар</th><th>Ед.</th>${stores.map(s => `<th class="n">${esc(s.name)}</th>`).join("")}${one ? "" : `<th class="n">Итого</th>`}</tr></thead><tbody>
+  ${rows.map(r => `<tr><td><b>${esc(r.it.name)}</b> <span class="muted">· ${esc(r.it.group || "")}${sup.has(r.it.id) ? " · " + esc([...sup.get(r.it.id)].map(suppName).join(", ")) : ""}</span></td><td>${esc(r.it.unit || "")}</td>${r.vs.map((v, i) => { const q = r.qs[i], mn = +r.it.min || 0, s = stores[i];
+      const cls = q < -1e-9 ? "neg" : (s.kind !== "warehouse" && mn && q < mn) ? "warn" : Math.abs(q) < 1e-9 ? "muted" : "";
+      return `<td class="n ${cls}">${Math.abs(q) < 1e-9 ? "·" : f(v)}</td>`; }).join("")}${one ? "" : `<td class="n"><b>${f(r.t)}</b></td>`}</tr>`).join("")}
+  <tr class="tot"><td colspan="2">Итого</td>${tot.map(t => `<td class="n">${f(t)}</td>`).join("")}${one ? "" : `<td class="n">${f(gt)}</td>`}</tr>
+  </tbody></table></div><div class="hint" style="margin-top:8px"><span class="neg">Красным</span> — отрицательный остаток (продано больше, чем пришло), <span class="warn">оранжевым</span> — ниже минимального остатка.</div>`
+  : `<div class="card"><div class="empty"><b>${active ? "По фильтрам ничего не найдено" : "Остатков нет"}</b>${active ? "Измените условия или нажмите «Сбросить фильтры»." : "Проведите поступление товара на склад или в магазин."}</div></div>`}`;
+}
+
+/* ---- report: sales ---- */
+function vSales(){
+  const sales = salesIn(ui.salesStore);
+  const key = m => ui.salesBy === "store" ? m.store : ui.salesBy === "group" ? (itemOf(m.item)?.group || "Без группы") : ui.salesBy === "day" ? m.date : m.item;
+  const label = k => ui.salesBy === "store" ? storeName(k) : ui.salesBy === "group" ? k : ui.salesBy === "day" ? dfmt(k) : (itemOf(k)?.name || "—");
+  const agg = new Map();
+  for (const m of sales) { const k = key(m); const a = agg.get(k) || {q:0, sum:0, cogs:0, n:new Set()}; a.q += -m.q; a.sum += m.sum; a.cogs += m.cogs; a.n.add(m.doc.id); agg.set(k, a); }
+  let rows = [...agg].map(([k, a]) => ({k, ...a}));
+  if (ui.salesBy === "day") rows.sort((a, b) => a.k < b.k ? -1 : 1); else rows.sort((a, b) => b.sum - a.sum);
+  const T = rows.reduce((t, r) => ({q:t.q + r.q, sum:t.sum + r.sum, cogs:t.cogs + r.cogs}), {q:0, sum:0, cogs:0});
+  const showQty = ui.salesBy === "item";
+  const colName = {store:"Точка", group:"Группа", item:"Товар", day:"День"}[ui.salesBy];
+  lastTable = {name:"Продажи " + dfmt(ui.from) + "-" + dfmt(ui.to), head:[colName, ...(showQty ? ["Кол-во"] : []), "Выручка","Себестоимость","Прибыль","Маржа %","Доля %"],
+    rows: rows.map(r => [label(r.k), ...(showQty ? [r2(r.q)] : []), r2(r.sum), r2(r.cogs), r2(r.sum - r.cogs), r.sum ? r2((r.sum - r.cogs) / r.sum * 100) : 0, T.sum ? r2(r.sum / T.sum * 100) : 0])};
+  return top("Продажи и прибыль", `Период: ${dfmt(ui.from)} — ${dfmt(ui.to)}`, csvBtn()) + `
+  <div class="filters">${periodCtl()} ${storeSelect("sstore", ui.salesStore, true, true)}
+  <div class="seg">${[["store","По точкам"],["group","По группам"],["item","По товарам"],["day","По дням"]].map(([k, n]) => `<button data-sby="${k}" class="${ui.salesBy === k ? "on" : ""}">${n}</button>`).join("")}</div></div>
+  ${rows.length ? `<div class="tbl"><table><thead><tr><th>${colName}</th>${showQty ? `<th class="n">Кол-во</th>` : ""}<th class="n">Выручка, ₴</th><th class="n">Себестоимость, ₴</th><th class="n">Валовая прибыль, ₴</th><th class="n">Маржа</th><th>Доля выручки</th></tr></thead><tbody>
+  ${rows.map(r => { const sh = T.sum ? r.sum / T.sum * 100 : 0, mg = r.sum ? (r.sum - r.cogs) / r.sum * 100 : NaN;
+    return `<tr><td><b>${esc(label(r.k))}</b></td>${showQty ? `<td class="n">${qtyf(r.q)} ${esc(itemOf(r.k)?.unit || "")}</td>` : ""}<td class="n">${money(r.sum)}</td><td class="n muted">${money(r.cogs)}</td><td class="n ${r.sum - r.cogs < 0 ? "neg" : ""}">${money(r.sum - r.cogs)}</td><td class="n ${mg < 15 ? "warn" : ""}">${pct(mg)}</td><td class="num" style="text-align:left"><span class="share"><i style="width:${sh.toFixed(1)}%"></i></span>${pct(sh)}</td></tr>`; }).join("")}
+  <tr class="tot"><td>Итого</td>${showQty ? "<td></td>" : ""}<td class="n">${money(T.sum)}</td><td class="n">${money(T.cogs)}</td><td class="n">${money(T.sum - T.cogs)}</td><td class="n">${pct(T.sum ? (T.sum - T.cogs) / T.sum * 100 : NaN)}</td><td>100%</td></tr>
+  </tbody></table></div>` : `<div class="card"><div class="empty"><b>Продаж за период нет</b>Продажи попадают в отчёт из проведённых документов «Реализация за смену».</div></div>`}`;
+}
+
+/* ---- report: ABC ---- */
+function vAbc(){
+  const sales = salesIn(ui.abcStore);
+  const agg = new Map();
+  for (const m of sales) { const a = agg.get(m.item) || {q:0, sum:0, cogs:0}; a.q += -m.q; a.sum += m.sum; a.cogs += m.cogs; agg.set(m.item, a); }
+  const metric = r => ui.abcBy === "sum" ? r.sum : r.sum - r.cogs;
+  const rows = [...agg].map(([k, a]) => ({k, ...a, v: 0})).map(r => (r.v = metric(r), r)).sort((a, b) => b.v - a.v);
+  const T = rows.reduce((t, r) => t + Math.max(0, r.v), 0); let cum = 0;
+  for (const r of rows) { const before = T ? cum / T * 100 : 100; cum += Math.max(0, r.v); r.cum = T ? cum / T * 100 : 0; r.cls = before < 80 ? "A" : before < 95 ? "B" : "C"; }
+  const cnt = {A:0, B:0, C:0}, sumc = {A:0, B:0, C:0}; rows.forEach(r => { cnt[r.cls]++; sumc[r.cls] += r.v; });
+  const unsold = S.items.filter(i => !agg.has(i.id));
+  lastTable = {name:"ABC-анализ", head:["Класс","Товар","Группа","Кол-во","Выручка","Прибыль","Доля %","Накопл. %"],
+    rows: rows.map(r => [r.cls, itemOf(r.k)?.name, itemOf(r.k)?.group, r2(r.q), r2(r.sum), r2(r.sum - r.cogs), T ? r2(r.v / T * 100) : 0, r2(r.cum)])};
+  return top("ABC-анализ", `Период: ${dfmt(ui.from)} — ${dfmt(ui.to)} · A — первые 80%, B — до 95%, C — остальное`, csvBtn()) + `
+  <div class="filters">${periodCtl()} ${storeSelect("astore", ui.abcStore, true, true)}
+  <div class="seg">${[["sum","По выручке"],["profit","По прибыли"]].map(([k, n]) => `<button data-abc="${k}" class="${ui.abcBy === k ? "on" : ""}">${n}</button>`).join("")}</div></div>
+  <div class="kpis">${["A","B","C"].map(c => `<div class="card kpi"><div class="l"><span class="pill ${c.toLowerCase()}">Класс ${c}</span></div><div class="v">${cnt[c]} поз.</div><div class="s">${money0(sumc[c])} ₴ · ${pct(T ? sumc[c] / T * 100 : NaN)}</div></div>`).join("")}
+  <div class="card kpi"><div class="l">Без продаж</div><div class="v ${unsold.length ? "warn" : ""}">${unsold.length} поз.</div><div class="s">кандидаты на вывод из ассортимента</div></div></div>
+  ${rows.length ? `<div class="tbl"><table><thead><tr><th>Класс</th><th>Товар</th><th>Группа</th><th class="n">Кол-во</th><th class="n">Выручка, ₴</th><th class="n">Прибыль, ₴</th><th class="n">Доля</th><th class="n">Накопленная</th></tr></thead><tbody>
+  ${rows.map(r => `<tr><td><span class="pill ${r.cls.toLowerCase()}">${r.cls}</span></td><td><b>${esc(itemOf(r.k)?.name || "—")}</b></td><td>${esc(itemOf(r.k)?.group || "")}</td><td class="n">${qtyf(r.q)} ${esc(itemOf(r.k)?.unit || "")}</td><td class="n">${money(r.sum)}</td><td class="n">${money(r.sum - r.cogs)}</td><td class="n">${pct(T ? r.v / T * 100 : NaN)}</td><td class="n muted">${pct(r.cum)}</td></tr>`).join("")}
+  ${unsold.map(i => `<tr><td><span class="pill draft">—</span></td><td>${esc(i.name)}</td><td>${esc(i.group || "")}</td><td class="n muted" colspan="5">нет продаж за период</td></tr>`).join("")}
+  </tbody></table></div>` : `<div class="card"><div class="empty"><b>Продаж за период нет</b>Выберите другой период или точку.</div></div>`}`;
+}
+
+/* ---- report: item card ---- */
+function vCard(){
+  const items = sortedItems();
+  if (!ui.cardItem && items[0]) ui.cardItem = items[0].id;
+  const it = itemOf(ui.cardItem);
+  const head = top("Карточка товара", "Все движения по товару с остатком после каждой операции", csvBtn()) +
+    `<div class="filters"><select id="citem">${items.map(i => `<option value="${i.id}" ${i.id === ui.cardItem ? "selected" : ""}>${esc(i.name)}</option>`).join("")}</select> ${storeSelect("cstore", ui.cardStore, true)} ${periodCtl()}</div>`;
+  if (!it) return head + `<div class="card"><div class="empty"><b>Нет товаров</b>Добавьте товары в номенклатуру.</div></div>`;
+  const all = ledger().moves.filter(m => m.item === it.id && (ui.cardStore === "all" || m.store === ui.cardStore))
+    .filter(m => !(ui.cardStore === "all" && m.type === "transfer")); // внутри сети перемещение не меняет общий остаток
+  let open = 0; for (const m of all) if (m.date < ui.from) open += m.q;
+  let bal = open, inc = 0, out = 0;
+  const rows = all.filter(m => inPeriod(m.date)).map(m => { bal += m.q; if (m.q > 0) inc += m.q; else out += -m.q; return {...m, bal}; });
+  const u = esc(it.unit || "");
+  lastTable = {name:"Карточка " + it.name, head:["Дата","Документ","Точка","Приход","Расход","Остаток"],
+    rows: [["", "Остаток на начало", "", "", "", r2(open)], ...rows.map(r => [dfmt(r.date), TYPES[r.type]?.short + " " + r.doc.num, storeName(r.store), r.q > 0 ? r2(r.q) : "", r.q < 0 ? r2(-r.q) : "", r2(r.bal)])]};
+  return head + `<div class="tbl"><table><thead><tr><th>Дата</th><th>Документ</th><th>Точка</th><th class="n">Приход</th><th class="n">Расход</th><th class="n">Остаток</th></tr></thead><tbody>
+  <tr><td></td><td class="muted">Остаток на ${dfmt(ui.from)}</td><td></td><td></td><td></td><td class="n"><b>${qtyf(open)} ${u}</b></td></tr>
+  ${rows.map(r => `<tr class="click" data-open="${r.doc.id}"><td>${dfmt(r.date)}</td><td>${esc(TYPES[r.type]?.short || "")} <b>${esc(r.doc.num)}</b></td><td>${esc(storeName(r.store))}</td><td class="n pos">${r.q > 0 ? qtyf(r.q) : ""}</td><td class="n">${r.q < 0 ? qtyf(-r.q) : ""}</td><td class="n ${r.bal < 0 ? "neg" : ""}">${qtyf(r.bal)}</td></tr>`).join("")}
+  <tr class="tot"><td colspan="3">Итого за период</td><td class="n">${qtyf(inc)}</td><td class="n">${qtyf(out)}</td><td class="n">${qtyf(bal)} ${u}</td></tr></tbody></table></div>`;
+}
+
+/* ---- report: suppliers ---- */
+function vSupp(){
+  const rows = S.suppliers.map(s => { let o = 0, inc = 0, paid = 0;
+    for (const m of ledger().supp) { if (m.supplier !== s.id) continue; if (m.date < ui.from) o += m.inc - m.paid; else if (m.date <= ui.to) { inc += m.inc; paid += m.paid; } }
+    return {s, o, inc, paid, c: o + inc - paid}; }).sort((a, b) => b.c - a.c);
+  const T = rows.reduce((t, r) => ({o:t.o + r.o, inc:t.inc + r.inc, paid:t.paid + r.paid, c:t.c + r.c}), {o:0, inc:0, paid:0, c:0});
+  lastTable = {name:"Расчёты с поставщиками", head:["Поставщик","Долг на начало","Поступило товара","Оплачено","Долг на конец"], rows: rows.map(r => [r.s.name, r2(r.o), r2(r.inc), r2(r.paid), r2(r.c)])};
+  return top("Расчёты с поставщиками", `Период: ${dfmt(ui.from)} — ${dfmt(ui.to)} · плюс — мы должны поставщику`, `<button class="btn pri" data-new="payment" ${canWrite ? "" : "disabled"}>Оплатить поставщику</button>` + csvBtn()) + `
+  <div class="filters">${periodCtl()}</div>
+  ${rows.length ? `<div class="tbl"><table><thead><tr><th>Поставщик</th><th class="n">Долг на начало</th><th class="n">Поступило товара</th><th class="n">Оплачено</th><th class="n">Долг на конец</th></tr></thead><tbody>
+  ${rows.map(r => `<tr class="click" data-supp="${r.s.id}"><td><b>${esc(r.s.name)}</b></td><td class="n">${money(r.o)}</td><td class="n">${money(r.inc)}</td><td class="n pos">${money(r.paid)}</td><td class="n ${r.c > 0 ? "warn" : ""}"><b>${money(r.c)}</b></td></tr>`).join("")}
+  <tr class="tot"><td>Итого</td><td class="n">${money(T.o)}</td><td class="n">${money(T.inc)}</td><td class="n">${money(T.paid)}</td><td class="n">${money(T.c)}</td></tr></tbody></table></div>`
+  : `<div class="card"><div class="empty"><b>Поставщиков нет</b>Добавьте поставщика в справочник.</div></div>`}`;
+}
+
+/* ---- service ---- */
+function vService(){
+  const demo = ["items","suppliers","docs"].reduce((a, c) => a + S[c].filter(x => x.demo).length, 0);
+  return top("Данные и настройки") + `<div class="grid2"><div class="card pad" style="display:grid;gap:12px">
+    <div><b>Режим работы</b><div class="hint">${window.__desktop ? "Программа для компьютера: база хранится в файле на этом компьютере. Каждый день при запуске делается резервная копия (хранятся последние 30)." : mode === "db" ? (window.__cloud ? "Общая база на сервере: все пользователи программы видят и вносят одни и те же данные в реальном времени. Пользователей и права настраивает администратор (меню «Пользователи»). Резервная копия базы раз в день сохраняется на этом компьютере (Файл → Открыть папку с резервными копиями)." : "Общая база: все, кому вы дали ссылку с доступом «Участник», видят и вносят одни и те же данные в реальном времени.") : "Демо-режим: данные хранятся только на этой странице до её закрытия."}</div></div>
+    <div><b>В базе</b><div class="hint">Товаров: ${S.items.length} · точек: ${S.stores.length} · поставщиков: ${S.suppliers.length} · документов: ${S.docs.length} (проведено ${S.docs.filter(d => d.posted).length})</div></div>
+    <div class="actions">${dl ? `<button class="btn" data-act="backup">Скачать резервную копию (JSON)</button>` : ""}${window.__desktop ? `<label class="btn" for="restorefile">Восстановить из копии…</label><input type="file" id="restorefile" accept=".json" hidden><button class="btn" data-act="open-folder">Открыть папку с базой</button>` : ""}</div>${window.__desktop ? `<div class="hint">Восстановление заменит всю текущую базу данными из файла. Перед заменой программа сохранит копию текущей базы в папку резервных копий.</div>` : ""}
+  </div><div class="card pad" style="display:grid;gap:12px">
+    <div><b>Демонстрационные данные</b><div class="hint">Примерные товары, поставщики и документы за последние 3 недели — чтобы посмотреть отчёты. Помечены как пример и удаляются отдельно, ваши данные не затрагиваются.</div></div>
+    <div class="actions"><button class="btn" data-act="demo-load" ${canWrite && !demo ? "" : "disabled"}>Загрузить демо-данные</button>
+    <button class="btn danger" data-act="demo-del" ${canWrite && demo ? "" : "disabled"}>Удалить демо-данные (${demo})</button></div>
+  </div></div>`;
+}
+
+/* ---------- modals ---------- */
+function openModal(html){ const m = $("#modal"); m.innerHTML = html; m.hidden = false; const f = m.querySelector("[autofocus]"); if (f) f.focus(); }
+function closeModal(){ $("#modal").hidden = true; $("#modal").innerHTML = ""; edit = null; }
+
+function openDoc(d){
+  if (ERP_TYPES[d.type]) { edit = JSON.parse(JSON.stringify(d)); edit._kind = "doc"; edit._arm = false; if (d.type === "payroll" && !Array.isArray(edit.lines)) edit.lines = []; return erpRender(); }
+  edit = JSON.parse(JSON.stringify(d)); edit._kind = "doc"; edit._arm = false;
+  if (!Array.isArray(edit.lines)) edit.lines = [];
+  renderDoc();
+}
+function newDoc(type){
+  if (ERP_TYPES[type]) return erpNewDoc(type);
+  const st = sortedStores(), wh = st.find(s => s.kind === "warehouse") || st[0], r0 = retail()[0] || st[0];
+  const d = {id: uid("d"), type, num: nextNum(type), date: today(), posted: false, created: Date.now(), lines: [], note: ""};
+  if (type === "receipt") { d.to = wh?.id; d.supplier = S.suppliers[0]?.id || ""; }
+  if (type === "transfer") { d.from = wh?.id; d.to = r0?.id; }
+  if (type === "sale" || type === "writeoff" || type === "inventory") d.from = r0?.id;
+  if (type === "writeoff") d.reason = WO_REASONS[0];
+  if (type === "payment") { d.supplier = S.suppliers[0]?.id || ""; d.amount = 0; delete d.lines; }
+  if (d.lines) d.lines.push({item:"", qty:"", price:""});
+  edit = d; edit._kind = "doc"; edit._new = true; renderDoc();
+}
+function itemOptions(sel){
+  let h = `<option value="">— выберите товар —</option>`, g = null;
+  for (const it of sortedItems()) { if (it.group !== g) { if (g !== null) h += `</optgroup>`; g = it.group; h += `<optgroup label="${esc(g || "Без группы")}">`; } h += `<option value="${it.id}" ${it.id === sel ? "selected" : ""}>${esc(it.name)}</option>`; }
+  return h + (g !== null ? `</optgroup>` : "");
+}
+function suppOptions(sel){ return `<option value="">— поставщик —</option>` + S.suppliers.map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name)}</option>`).join(""); }
+function stOptions(sel){ return sortedStores().map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name)}${s.kind === "warehouse" ? " (склад)" : ""}</option>`).join(""); }
+
+function lineSum(d, l){
+  if (d.type === "sale" && l.sum !== undefined && l.sum !== "") return +l.sum;
+  if (d.type === "receipt" || d.type === "sale") return (num(l.qty)) * (num(l.price));
+  if (d.type === "inventory") return (num(l.fact) - stockOf(d.from, l.item));
+  return num(l.qty) * (itemOf(l.item)?.price || 0);
+}
+function renderDoc(){
+  if (edit && ERP_TYPES[edit.type]) return erpRender();
+  const d = edit, t = TYPES[d.type], ro = !canWrite;
+  const fields = [`<label>Дата<input type="date" data-h="date" value="${esc(d.date)}"></label>`];
+  if (d.type === "receipt") fields.push(`<label>Поставщик<select data-h="supplier">${d._newSupp ? `<option value="__new" ${d.supplier === "__new" ? "selected" : ""}>+ новый: ${esc(d._newSupp.name)}</option>` : ""}${suppOptions(d.supplier)}</select></label>`, `<label>Склад / магазин<select data-h="to">${stOptions(d.to)}</select></label>`, `<label>№ накладной поставщика<input type="text" data-h="extNum" value="${esc(d.extNum || "")}"></label>`);
+  if (d.type === "transfer") fields.push(`<label>Откуда<select data-h="from">${stOptions(d.from)}</select></label>`, `<label>Куда<select data-h="to">${stOptions(d.to)}</select></label>`);
+  if (d.type === "sale" || d.type === "writeoff" || d.type === "inventory") fields.push(`<label>Точка<select data-h="from">${stOptions(d.from)}</select></label>`);
+  if (d.type === "sale") fields.push(`<label>Наличные, ₴<input type="number" step="0.01" data-h="cash" value="${esc(d.cash ?? "")}"></label>`, `<label>Безнал, ₴<input type="number" step="0.01" data-h="card" value="${esc(d.card ?? "")}"></label>`);
+  if (d.type === "writeoff") fields.push(`<label>Причина<select data-h="reason">${WO_REASONS.map(x => `<option ${x === woReason(d) ? "selected" : ""}>${x}</option>`).join("")}</select></label>`);
+  if (d.type === "payment") fields.push(`<label>Поставщик<select data-h="supplier">${suppOptions(d.supplier)}</select></label>`, `<label>Сумма, ₴<input type="number" step="0.01" data-h="amount" value="${esc(d.amount ?? "")}"></label>`, `<label>Способ<select data-h="method">${["Банк","Наличные"].map(x => `<option ${x === d.method ? "selected" : ""}>${x}</option>`).join("")}</select></label>`, `<label>Оплачено из<select data-h="account">${accOpts(d.account, "— не указано —")}</select></label>`);
+  let lines = "";
+  if (d.lines) {
+    const inv = d.type === "inventory", priced = d.type === "receipt" || d.type === "sale";
+    const src = d.type === "receipt" ? null : d.from;
+    lines = `<div class="tbl"><table class="lines"><thead><tr><th>№</th><th style="min-width:220px">Товар</th><th>Ед.</th>${src ? `<th class="n">Остаток</th>` : ""}${inv ? `<th class="n">Факт</th><th class="n">Разница</th>` : `<th class="n">Кол-во</th>`}${priced ? `<th class="n">Цена, ₴</th><th class="n">Сумма, ₴</th>` : inv ? "" : `<th class="n">Сумма в рознице</th>`}<th></th></tr></thead><tbody>
+    ${d.lines.map((l, i) => { const it = itemOf(l.item); const st = src && l.item ? stockOf(src, l.item) : null;
+      return `<tr><td class="i">${i + 1}</td><td><div class="isr"><input type="text" class="isr-in" data-isr="${i}" value="${esc(it ? it.name : "")}" placeholder="${l._src ? "Не найдено — выберите или добавьте" : "Название, код или штрихкод…"}" autocomplete="off" spellcheck="false" aria-label="Товар"></div>${l._src ? `<div class="hint" style="margin-top:3px">с фото: «${esc(l._src)}»${!l.item ? ` · ${esc(l._unit)} · <a href="#" data-act="photo-mk1" data-i="${i}" style="color:var(--accent)">добавить в номенклатуру</a>` : ""}${l.item && l._fuzzy ? ` · <span class="warn">≈ похожее название, проверьте</span>` : ""}${l._dup ? ` · <span class="neg">повтор строки выше?</span>` : ""}</div>` : ""}</td><td class="muted">${esc(it?.unit || "")}</td>
+      ${src ? `<td class="n ${st < 0 ? "neg" : "muted"}">${st === null ? "" : qtyf(st)}</td>` : ""}
+      ${inv ? `<td class="n"><input class="q" type="number" step="0.001" data-l="${i}:fact" value="${esc(l.fact ?? "")}" aria-label="Факт"></td><td class="n" id="ls${i}">${l.item ? qtyf(lineSum(d, l)) : ""}</td>`
+            : `<td class="n"><input class="q" type="number" step="0.001" min="0" data-l="${i}:qty" value="${esc(l.qty ?? "")}" aria-label="Количество"></td>`}
+      ${priced ? `<td class="n"><input class="q" type="number" step="0.01" min="0" data-l="${i}:price" value="${esc(l.price ?? "")}" aria-label="Цена"></td><td class="n" id="ls${i}">${money(lineSum(d, l))}</td>` : inv ? "" : `<td class="n muted" id="ls${i}">${money(lineSum(d, l))}</td>`}
+      <td><button class="x" data-rm="${i}" aria-label="Удалить строку" ${ro ? "disabled" : ""}>×</button></td></tr>`; }).join("")}
+    </tbody></table></div>
+    <div class="actions"><button class="btn sm" data-act="line-add" ${ro ? "disabled" : ""}>+ Добавить строку</button>${d.type === "receipt" && !d.posted && !ro ? `<label class="btn sm">Заполнить с фото накладной<input type="file" id="photofile" accept="image/*" multiple hidden></label>` : ""}
+      ${inv || d.type === "transfer" || d.type === "writeoff" ? `<button class="btn sm" data-act="fill-stock" ${ro ? "disabled" : ""}>Заполнить остатками точки</button>` : ""}
+      ${inv && d.lines.some(l => l.item) ? `<button class="btn sm danger ${d._clr ? "arm" : ""}" data-act="lines-clear" ${ro ? "disabled" : ""}>${d._clr ? `Точно удалить все ${d.lines.filter(l => l.item).length} строк?` : "Удалить все строки"}</button>${d._clr ? ` <button class="btn sm" data-act="lines-clear-no">Отмена</button>` : ""}` : ""}
+      ${S.items.length ? `<select id="fillgroup" class="btn sm" aria-label="Добавить группу"><option value="">+ Добавить всю группу…</option>${groups().map(g => `<option>${esc(g)}</option>`).join("")}</select>` : ""}
+    </div>`;
+  }
+  setTimeout(markFrac, 0);
+  const totalLbl = d.type === "inventory" ? "Сумма по факту (розница)" : d.type === "transfer" || d.type === "writeoff" ? "Сумма в розничных ценах" : "Итого";
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(t.name)}">
+    <div class="sh-h"><div><h2>${esc(t.name)} ${esc(d.num)} от ${dfmt(d.date)}</h2><div class="hint" style="margin-top:4px"><span class="pill ${d.posted ? "ok" : "draft"}">${d.posted ? "Проведён" : edit._new ? "Новый" : "Черновик"}</span>${d.demo ? ` <span class="pill t">пример</span>` : ""}</div></div><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b"><div class="fgrid">${fields.join("")}</div>${d.type === "receipt" && d.lines ? photoBanner(d) : ""}${lines}
+      <label class="fgrid" style="grid-template-columns:1fr"><span class="hint">Комментарий</span><input type="text" data-h="note" value="${esc(d.note || "")}"></label></div>
+    <div class="sh-f"><div>${edit._new ? "" : `<button class="btn danger ${d._arm ? "arm" : ""}" data-act="doc-del" ${ro ? "disabled" : ""}>${d._arm ? "Точно удалить?" : "Удалить"}</button>`}</div>
+      <div class="actions"><span class="hint">${totalLbl}:</span> <span class="total" id="dtotal">${money(docTotal(d))} ₴</span>
+      ${d.posted ? `<button class="btn" data-act="doc-unpost" ${ro ? "disabled" : ""}>Отменить проведение</button>` : `<button class="btn" data-act="doc-save" ${ro ? "disabled" : ""}>Записать черновик</button>`}
+      <button class="btn pri" data-act="doc-post" ${ro ? "disabled" : ""}>Провести и закрыть</button></div></div>
+  </div>`);
+}
+function markFrac(){
+  const d = edit; if (!d || !d.lines) return;
+  d.lines.forEach((l, i) => { const it = itemOf(l.item), f = d.type === "inventory" ? "fact" : "qty", el = document.querySelector(`[data-l="${i}:${f}"]`);
+    if (!el) return; const bad = !!l.item && !fracAllowed(it) && l[f] !== "" && l[f] !== undefined && isFrac(l[f]);
+    el.classList.toggle("bad", bad); el.title = bad ? "Штучный товар — только целое количество" : ""; if (it && !fracAllowed(it)) el.step = "1"; });
+}
+function refreshDocSums(){
+  const d = edit; if (!d || !d.lines) return;
+  markFrac();
+  d.lines.forEach((l, i) => { const c = document.getElementById("ls" + i); if (c) c.textContent = d.type === "inventory" ? (l.item ? qtyf(lineSum(d, l)) : "") : money(lineSum(d, l)); });
+  const t = $("#dtotal"); if (t) t.textContent = money(docTotal(d)) + " ₴";
+}
+function cleanDoc(){
+  const d = JSON.parse(JSON.stringify(edit)); delete d._kind; delete d._new; delete d._arm; delete d._clr; delete d._photo; delete d._newSupp;
+  if (d.lines) d.lines = d.lines.filter(l => l.item).map(l => d.type === "inventory" ? {item:l.item, fact:num(l.fact)} : d.type === "receipt" || d.type === "sale" ? Object.assign({item:l.item, qty:num(l.qty), price:num(l.price)}, l.sum !== undefined && l.sum !== "" ? {sum:num(l.sum)} : {}) : {item:l.item, qty:num(l.qty)});
+  if (d.type === "payment") d.amount = num(d.amount);
+  if (d.type === "sale") { if (d.cash !== undefined && d.cash !== "") d.cash = num(d.cash); if (d.card !== undefined && d.card !== "") d.card = num(d.card); }
+  d.total = docTotal(d); d.updated = Date.now();
+  return d;
+}
+function validate(d){
+  if (!d.date) return "Укажите дату.";
+  if (d.type === "receipt" && !d.supplier) return "Выберите поставщика.";
+  if (d.type === "payment") { if (!d.supplier) return "Выберите поставщика."; if (!(d.amount > 0)) return "Укажите сумму оплаты."; return ""; }
+  if (d.type === "transfer" && d.from === d.to) return "Склад отправитель и получатель совпадают.";
+  if ((d.type === "receipt" || d.type === "transfer") && !d.to) return "Выберите, куда поступает товар.";
+  if (["transfer","sale","writeoff","inventory"].includes(d.type) && !d.from) return "Выберите точку.";
+  if (!d.lines.length) return "Добавьте хотя бы один товар.";
+  if (d.type !== "inventory" && d.lines.some(l => !(l.qty > 0))) return "У каждой строки должно быть количество больше нуля.";
+  if (d.type === "sale" && d.lines.some(l => !(l.price > 0))) return "Укажите цену продажи во всех строках.";
+  return "";
+}
+/* items sold by the piece (unit «шт») may not have fractional quantities; exception: water with Checkbox code 66 (sold by volume) */
+const fracAllowed = it => !it || it.unit !== "шт" || (String(it.cbCode || "") === "66" && /вода/i.test((it.group || "") + " " + (it.name || "")));
+const isFrac = v => Math.abs(num(v) - Math.round(num(v))) > 1e-9;
+function fracErrors(d){
+  const bad = [];
+  for (const l of d.lines || []) { if (!l.item) continue; const it = itemOf(l.item); if (fracAllowed(it)) continue;
+    const q = d.type === "inventory" ? l.fact : l.qty; if (q !== undefined && q !== "" && isFrac(q)) bad.push(`${it.name}: ${String(q).replace(".", ",")} шт`); }
+  return bad;
+}
+async function saveDoc(posted){
+  if (edit.lines && edit.lines.some(l => l._src && !l.item)) { const n = edit.lines.filter(l => l._src && !l.item).length; return toast(`Есть строки с фото без товара (${n}). Выберите товар или нажмите «Добавить в номенклатуру».`, "neg"); }
+  if (edit.supplier === "__new" && edit._newSupp) { if (!edit._newSupp.id) edit._newSupp.id = uid("s"); try { const s = {id: edit._newSupp.id, name: edit._newSupp.name, edrpou: edit._newSupp.edrpou || "", note: "добавлен с фото накладной"}; await put("suppliers", s); if (!byId("suppliers", s.id)) S.suppliers.push(s); edit.supplier = s.id; delete edit._newSupp; } catch (e) { return toast(writeErr(e), "neg"); } }
+  const srcLines = edit.lines ? edit.lines.slice() : null;
+  const d = cleanDoc(); d.posted = posted;
+  const fe = fracErrors(d);
+  if (fe.length) { toast("Нельзя сохранить: дробное количество у штучного товара — " + fe.slice(0, 3).join("; ") + (fe.length > 3 ? ` и ещё ${fe.length - 3}` : "") + ". Укажите целое число.", "neg"); markFrac(); return; }
+  if (posted) { const e = validate(d); if (e) { toast(e, "neg"); return; } }
+  try {
+    await put("docs", d);
+    if (srcLines && d.type === "receipt") rememberAliases({supplier: d.supplier, lines: srcLines});
+    if (posted && ["transfer","sale","writeoff"].includes(d.type)) {
+      setTimeout(() => { const neg = d.lines.filter(l => stockOf(d.from, l.item) < -1e-9).map(l => itemOf(l.item)?.name); if (neg.length) toast("Проведено, но остаток ушёл в минус: " + neg.slice(0, 3).join(", ") + (neg.length > 3 ? "…" : ""), "neg"); }, 400);
+    }
+    toast(posted ? `${TYPES[d.type].short} ${d.num} проведён` : `${d.num} записан как черновик`);
+    closeModal();
+  } catch (e) { toast(writeErr(e), "neg"); }
+}
+
+/* item / store / supplier editors */
+function refForm(kind, obj){
+  edit = JSON.parse(JSON.stringify(obj)); edit._kind = kind; edit._arm = false;
+  const o = edit, ro = !canWrite;
+  let title, f;
+  if (kind === "item") {
+    title = o._new ? "Новый товар" : o.name;
+    const mk = num(o.buy) ? ((num(o.price) - num(o.buy)) / num(o.buy) * 100) : NaN;
+    f = `<label style="grid-column:1/-1">Наименование<input type="text" data-r="name" value="${esc(o.name || "")}" autofocus></label>
+      <label>Группа<input type="text" data-r="group" list="glist" value="${esc(o.group || "")}"><datalist id="glist">${groups().map(g => `<option value="${esc(g)}">`).join("")}</datalist></label>
+      <label>Единица<select data-r="unit">${["кг","шт","уп","л"].map(u => `<option ${u === o.unit ? "selected" : ""}>${u}</option>`).join("")}</select></label>
+      <label>Штрихкод<input type="text" data-r="barcode" value="${esc(o.barcode || "")}"></label>
+      <label>Закупочная цена, ₴<input type="number" step="0.01" data-r="buy" value="${esc(o.buy ?? "")}"></label>
+      <label>Розничная цена, ₴<input type="number" step="0.01" data-r="price" value="${esc(o.price ?? "")}"></label>
+      <label>Наценка<input type="text" id="mkview" value="${pct(mk)}" readonly tabindex="-1"></label>
+      <label>Код в Checkbox<input type="text" data-r="cbCode" value="${esc(o.cbCode || "")}"></label>
+      <label>Основной поставщик<select data-r="supplier"><option value="">—</option>${S.suppliers.slice().sort((a, b) => (a.name || "").localeCompare(b.name || "", "ru")).map(x => `<option value="${x.id}" ${x.id === o.supplier ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
+      <label>Мин. остаток в точке<input type="number" step="0.001" data-r="min" value="${esc(o.min ?? "")}"></label>`;
+  } else if (kind === "store") {
+    title = o._new ? "Новая точка" : o.name;
+    f = `<label style="grid-column:1/-1">Название<input type="text" data-r="name" value="${esc(o.name || "")}" autofocus></label>
+      <label>Тип<select data-r="kind"><option value="store" ${o.kind !== "warehouse" ? "selected" : ""}>Магазин</option><option value="warehouse" ${o.kind === "warehouse" ? "selected" : ""}>Склад</option></select></label>
+      <label>Фискальный номер ПРРО<input type="text" data-r="prro" value="${esc(o.prro || "")}"></label>
+      <label style="grid-column:1/-1">Адрес<input type="text" data-r="address" value="${esc(o.address || "")}"></label>`;
+  } else {
+    title = o._new ? "Новый поставщик" : o.name;
+    f = `<label style="grid-column:1/-1">Название<input type="text" data-r="name" value="${esc(o.name || "")}" autofocus></label>
+      <label>ЄДРПОУ / ІПН<input type="text" data-r="edrpou" value="${esc(o.edrpou || "")}"></label>
+      <label>Телефон<input type="text" data-r="phone" value="${esc(o.phone || "")}"></label>
+      <label>Отсрочка, дней<input type="number" data-r="delay" value="${esc(o.delay ?? "")}"></label>
+      <label style="grid-column:1/-1">Комментарий<input type="text" data-r="note" value="${esc(o.note || "")}"></label>`;
+  }
+  const used = !o._new && (kind === "item" ? S.docs.some(d => (d.lines || []).some(l => l.item === o.id)) : kind === "store" ? S.docs.some(d => d.from === o.id || d.to === o.id) : S.docs.some(d => d.supplier === o.id));
+  openModal(`<div class="sheet narrow" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="sh-h"><h2>${esc(title)}</h2><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b"><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${f}</div>${used ? `<div class="hint">Используется в документах — удалить нельзя, только переименовать.</div>` : ""}</div>
+    <div class="sh-f"><div>${o._new || used ? "" : `<button class="btn danger" data-act="ref-del" ${ro ? "disabled" : ""}>Удалить</button>`}</div>
+    <div class="actions"><button class="btn" data-act="close">Отмена</button><button class="btn pri" data-act="ref-save" ${ro ? "disabled" : ""}>Сохранить</button></div></div></div>`);
+}
+async function saveRef(){
+  const o = JSON.parse(JSON.stringify(edit)), kind = o._kind; delete o._kind; delete o._new; delete o._arm;
+  if (!String(o.name || "").trim()) { toast("Заполните название.", "neg"); return; }
+  o.name = o.name.trim();
+  if (kind === "item") { o.buy = num(o.buy); o.price = num(o.price); o.min = num(o.min); o.group = (o.group || "").trim() || "Без группы"; o.unit = o.unit || "кг"; }
+  if (kind === "store") o.kind = o.kind || "store";
+  try { await put(kind === "item" ? "items" : kind === "store" ? "stores" : "suppliers", o); toast("Сохранено"); closeModal(); } catch (e) { toast(writeErr(e), "neg"); }
+}
+function repriceForm(){
+  edit = {_kind:"reprice", group:"all", base:"buy", mk:"35", round:"1"};
+  openModal(`<div class="sheet narrow" role="dialog" aria-modal="true" aria-label="Цены по наценке">
+    <div class="sh-h"><h2>Установка цен по наценке</h2><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b"><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      <label>Группа<select data-r="group"><option value="all">Все группы</option>${groups().map(g => `<option>${esc(g)}</option>`).join("")}</select></label>
+      <label>От какой цены<select data-r="base"><option value="buy">Закупочная цена</option><option value="avg">Средняя себестоимость</option></select></label>
+      <label>Наценка, %<input type="number" data-r="mk" value="35"></label>
+      <label>Округлять до<select data-r="round"><option value="1">1 ₴</option><option value="0.5">0,50 ₴</option><option value="0.1">0,10 ₴</option><option value="5">5 ₴</option></select></label>
+    </div><div class="hint">Розничная цена = база × (1 + наценка). Новые цены сразу подставляются в новые документы продаж; проведённые документы не меняются.</div></div>
+    <div class="sh-f"><div></div><div class="actions"><button class="btn" data-act="close">Отмена</button><button class="btn pri" data-act="reprice-go">Пересчитать цены</button></div></div></div>`);
+}
+async function doReprice(){
+  const {group, base, mk, round} = edit, k = 1 + num(mk) / 100, rd = num(round) || 1, A = ledger().avg;
+  const list = S.items.filter(i => group === "all" || (i.group || "Без группы") === group);
+  let n = 0;
+  try { for (const it of list) { const b = base === "avg" ? (A.get(it.id) || +it.buy || 0) : +it.buy || 0; if (!b) continue;
+    const p = Math.ceil(b * k / rd - 1e-9) * rd; if (Math.abs(p - it.price) < 0.001) continue; await put("items", {...it, price: r2(p)}); n++; }
+    toast(n ? `Цены обновлены у ${n} товаров` : "Цены уже соответствуют наценке"); closeModal();
+  } catch (e) { toast(writeErr(e), "neg"); }
+}
+
+/* ---------- CSV & backup ---------- */
+async function saveFile(filename, text){
+  if (!dl) { toast("Сохранение файлов недоступно в этом окне.", "neg"); return; }
+  try { const r = await dl.save({filename, data: new Blob([text], {type: filename.endsWith(".json") ? "application/json" : "text/csv"})}); if (r && r.status === "saved") toast("Файл сохранён: " + filename); }
+  catch (e) { if (e && e.code !== "cancelled" && e.code !== "declined") toast("Файл не сохранён: " + (e.message || e.code || "ошибка"), "neg"); }
+}
+function exportCsv(){
+  if (!lastTable) return;
+  const cell = v => { if (typeof v === "number") return String(v).replace(".", ","); const s = String(v ?? ""); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const text = "﻿" + [lastTable.head, ...lastTable.rows].map(r => r.map(cell).join(";")).join("\r\n");
+  saveFile(lastTable.name.replace(/[\\/:*?"<>|]/g, "_") + ".csv", text);
+}
+
+/* ---------- demo data ---------- */
+function makeDemo(existingStores){
+  let seed = 42; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const stores = existingStores.length ? existingStores.slice() : [
+    {id:"st_wh", name:"Склад Днепр", kind:"warehouse", address:"м. Дніпро"},
+    ...["Юбилейный","Матросова","Бойко","Уральская","Крытый","Чайка","Чумаченко"].map((n, i) => ({id:"st_" + (i + 1), name:n, kind:"store", address:"м. Кам'янське"}))];
+  const wh = stores.find(s => s.kind === "warehouse") || stores[0];
+  const shops = stores.filter(s => s.id !== wh.id);
+  const sup = [["Пельменный цех (пример)","ПФ"],["Рыбный двор (пример)","Рыба"],["Мясокомбинат (пример)","Колбасы"]].map(([n], i) => ({id:"demo_s" + i, name:n, demo:true, delay:14, note:"демо"}));
+  const raw = [["Пельмени «Домашние» 1 кг","ПФ","шт",120,165,4],["Пельмени «Сибирские» 0,8 кг","ПФ","шт",105,145,4],["Вареники с картофелем 1 кг","ПФ","шт",75,105,4],["Вареники с творогом 1 кг","ПФ","шт",95,130,3],["Хинкали 1 кг","ПФ","шт",140,190,2],["Чебуреки с мясом 0,5 кг","ПФ","шт",70,99,3],["Котлеты по-киевски 0,5 кг","ПФ","шт",110,150,2],["Блинчики с мясом 0,5 кг","ПФ","шт",65,92,3],
+    ["Сельдь слабосолёная","Рыба","кг",90,135,2],["Скумбрия холодного копчения","Рыба","кг",210,290,2],["Минтай филе","Рыба","кг",150,205,2],["Креветки варёно-мороженые","Рыба","кг",260,350,1],
+    ["Колбаса Докторская","Колбасы","кг",220,295,2],["Сервелат","Колбасы","кг",260,345,1],["Сыр Гауда","Сыры","кг",240,320,1],["Сыр Моцарелла","Сыры","кг",230,310,1],
+    ["Кальмар сушёный 100 г","Смаколики","шт",45,69,5],["Арахис солёный 100 г","Смаколики","шт",18,29,5]];
+  const items = raw.map(([name, group, unit, buy, price, min], i) => ({id:"demo_i" + i, name, group, unit, buy, price, min, demo:true}));
+  const supOf = it => it.group === "ПФ" ? sup[0] : it.group === "Рыба" ? sup[1] : sup[2];
+  const docs = []; let c = Date.now() - 864e5 * 30; const n = {}; const N = t => TYPES[t].pre + "-" + String(n[t] = (n[t] || 0) + 1).padStart(5, "0");
+  const t0 = today();
+  for (let day = -21; day <= -1; day++) {
+    const date = addDays(t0, day);
+    if (day % 7 === 0 || day === -21) for (const s of sup) {
+      const lines = items.filter(i => supOf(i) === s).map(i => ({item:i.id, qty: Math.round((i.unit === "кг" ? 20 : 34) * shops.length * 1.1), price:i.buy}));
+      docs.push({id:"demo_d" + docs.length, type:"receipt", num:N("receipt"), date, supplier:s.id, to:wh.id, lines, posted:true, created:c++, demo:true, note:"пример"});
+    }
+    if (day % 7 === 0 || day === -21) for (const sh of shops) {
+      const lines = items.map(i => ({item:i.id, qty: i.unit === "кг" ? 18 : 32}));
+      docs.push({id:"demo_d" + docs.length, type:"transfer", num:N("transfer"), date, from:wh.id, to:sh.id, lines, posted:true, created:c++, demo:true, note:"пример"});
+    }
+    shops.forEach((sh, si) => {
+      const lines = [];
+      for (const it of items) { const base = it.unit === "кг" ? 1.4 : 2.6; const k = 0.6 + si * 0.09 + rnd() * 0.9; let q = it.unit === "кг" ? Math.round(base * k * rnd() * 2 * 10) / 10 : Math.round(base * k * rnd() * 2); if (rnd() < 0.18) q = 0; if (q > 0) lines.push({item:it.id, qty:q, price:it.price}); }
+      if (lines.length) docs.push({id:"demo_d" + docs.length, type:"sale", num:N("sale"), date, from:sh.id, lines, posted:true, created:c++, demo:true, note:"пример"});
+    });
+  }
+  docs.push({id:"demo_d" + docs.length, type:"writeoff", num:N("writeoff"), date:addDays(t0, -5), from:shops[0].id, reason:"Разморозка", lines:[{item:items[2].id, qty:3}, {item:items[5].id, qty:2}], posted:true, created:c++, demo:true, note:"пример"});
+  sup.forEach((s, i) => docs.push({id:"demo_d" + docs.length, type:"payment", num:N("payment"), date:addDays(t0, -12 + i), supplier:s.id, amount: [300000, 150000, 250000][i], method:"Банк", posted:true, created:c++, demo:true, note:"пример"}));
+  const pr = new Map(items.map(i => [i.id, i.price]));
+  for (const d of docs) d.total = d.type === "payment" ? d.amount : Math.round(d.lines.reduce((a, l) => a + l.qty * (d.type === "receipt" || d.type === "sale" ? l.price : pr.get(l.item)), 0) * 100) / 100;
+  return {stores, suppliers:sup, items, docs};
+}
+async function loadDemo(){
+  const D = makeDemo(S.stores);
+  if (mode !== "db") { Object.assign(S, D); bump(); return; }
+  const btns = document.querySelectorAll('[data-act="demo-load"]'); btns.forEach(b => b.disabled = true);
+  const all = [...(S.stores.length ? [] : D.stores.map(x => ["stores", x])), ...D.suppliers.map(x => ["suppliers", x]), ...D.items.map(x => ["items", x]), ...D.docs.map(x => ["docs", x])];
+  try { for (let i = 0; i < all.length; i += 6) { await Promise.all(all.slice(i, i + 6).map(([c, x]) => put(c, x))); toast(`Загружаем пример… ${Math.min(i + 6, all.length)} из ${all.length}`); }
+    toast("Демо-данные загружены"); ui.view = "dash"; bump();
+  } catch (e) { toast(writeErr(e), "neg"); btns.forEach(b => b.disabled = false); }
+}
+async function delDemo(){
+  const all = [];
+  for (const c of ["docs","items","suppliers"]) for (const x of S[c]) if (x.demo) all.push([c, x.id]);
+  try { for (let i = 0; i < all.length; i += 6) { await Promise.all(all.slice(i, i + 6).map(([c, id]) => del(c, id))); toast(`Удаляем пример… ${Math.min(i + 6, all.length)} из ${all.length}`); }
+    toast("Демо-данные удалены");
+  } catch (e) { toast(writeErr(e), "neg"); }
+}
+
+
+/* ---------- import from Checkbox ---------- */
+let imp = null; // parsed import preview
+const nrm = s => String(s ?? "").toLowerCase().replace(/[«»"'`’.]/g, " ").replace(/\s+/g, " ").trim();
+const storeByPrro = p => S.stores.find(s => String(s.prro || "") === p || (s.prroAlt || []).includes(p));
+function matchItem(code, barcode, name){
+  const n = nrm(name);
+  if (code) { const it = S.items.find(i => String(i.cbCode || "") === code && nrm(i.name) === n); if (it) return it; }
+  const byName = S.items.find(i => nrm(i.name) === n); if (byName) return byName;
+  if (barcode) { const it = S.items.find(i => i.barcode && String(i.barcode) === barcode); if (it) return it; }
+  return null;
+}
+function cellDate(v){
+  if (typeof v === "number" && v > 20000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+  if (v instanceof Date) return iso(v);
+  const s = String(v ?? "").trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
+  if ((m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/))) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return "";
+}
+function shortAddr(a){ const m = String(a || "").match(/(ВУЛ\.|ПР-Т|ПРОСП\.|ПРОВ\.|БУЛЬВ\.|ПЛ\.)\s*([^,]+)/i); return m ? m[2].trim().replace(/^\S/, c => c.toUpperCase()).toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()) : (a || "Новая точка"); }
+async function readImportFiles(files){
+  if (typeof XLSX === "undefined") { toast("Модуль чтения Excel ещё загружается. Повторите через пару секунд.", "neg"); return; }
+  const rows = [], names = [];
+  for (const f of files) {
+    try {
+      let wb;
+      if (/\.csv$/i.test(f.name)) wb = XLSX.read(await f.text(), {type:"string", raw:true});
+      else wb = XLSX.read(await f.arrayBuffer(), {type:"array"});
+      const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:true, defval:null});
+      const hi = arr.findIndex(r => r && r.some(c => nrm(c) === "найменування"));
+      if (hi < 0) { toast(`В файле «${f.name}» не найдена колонка «Найменування». Нужен отчёт по товарам из Checkbox.`, "neg"); continue; }
+      const H = arr[hi].map(c => nrm(c)), col = n => H.indexOf(nrm(n));
+      const C = {code:col("Код товару"), name:col("Найменування"), op:col("Вид операції"), price:col("Вартість"), qty:col("Кількість"), sum:col("Сума"), disc:col("Сума знижок"), total:col("Загальна сума"), date:col("Дата продажу"), prro:col("Фіскальний номер ПРРО"), addr:col("Адреса каси"), bar:col("Штрих-код"), group:col("Група")};
+      const miss = ["qty","date","prro"].filter(k => C[k] < 0).concat(C.total < 0 && C.sum < 0 ? ["sum"] : []);
+      if (miss.length) { toast(`В файле «${f.name}» нет нужных колонок (Кількість, Дата продажу, Фіскальний номер ПРРО, Сума).`, "neg"); continue; }
+      const g = (r, k) => C[k] >= 0 ? r[C[k]] : null;
+      for (const r of arr.slice(hi + 1)) {
+        if (!r) continue; const name = String(g(r, "name") ?? "").trim(); if (!name) continue;
+        const op = nrm(g(r, "op")); if (op && !op.startsWith("продаж") && !op.startsWith("поверн")) continue;
+        const sign = op.startsWith("поверн") ? -1 : 1;
+        const qty = num(g(r, "qty")), total = C.total >= 0 ? num(g(r, "total")) : num(g(r, "sum")), date = cellDate(g(r, "date")), prro = String(g(r, "prro") ?? "").trim();
+        if (!date || !prro || !qty) continue;
+        rows.push({code:String(g(r, "code") ?? "").trim(), name, group:String(g(r, "group") ?? "").trim(), bar:String(g(r, "bar") ?? "").trim(), price:num(g(r, "price")), qty:sign * Math.abs(qty), total:sign * Math.abs(total), disc:Math.abs(num(g(r, "disc"))), date, prro, addr:String(g(r, "addr") ?? "").trim()});
+      }
+      names.push(f.name);
+    } catch (e) { toast(`Не удалось прочитать «${f.name}»: ${e.message || e}`, "neg"); }
+  }
+  if (!rows.length) { if (names.length) toast("В файле нет строк продаж.", "neg"); return; }
+  buildImport(rows, names);
+}
+function buildImport(rows, names){
+  const prros = new Map(), days = new Map(), newItems = new Map();
+  for (const r of rows) {
+    if (!prros.has(r.prro)) { const st = storeByPrro(r.prro); let guess = st ? st.id : "";
+      if (!st) { const a = nrm(r.addr); const s2 = S.stores.find(s => s.name && a.includes(nrm(s.name))); guess = s2 ? s2.id : "new"; }
+      prros.set(r.prro, {prro:r.prro, addr:r.addr, known:!!st, storeId:guess}); }
+    const it = matchItem(r.code, r.bar, r.name), key = it ? it.id : "new:" + (r.code || r.bar || nrm(r.name));
+    if (!it && !newItems.has(key)) newItems.set(key, {key, code:r.code, name:r.name.replace(/\s+/g, " ").replace(/[ .]+$/, ""), group:r.group || "Без группы", bar:r.bar, price:r.price, unit: /(^|\s)кг(\.|\s|$)/i.test(r.name) || Math.abs(r.qty % 1) > 1e-9 ? "кг" : "шт"});
+    const dk = r.prro + "|" + r.date; const d = days.get(dk) || {prro:r.prro, date:r.date, lines:new Map(), total:0, disc:0};
+    const l = d.lines.get(key) || {key, qty:0, sum:0}; l.qty += r.qty; l.sum += r.total; d.lines.set(key, l);
+    d.total += r.total; d.disc += r.disc; days.set(dk, d);
+  }
+  imp = {names, prros, days:[...days.values()].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.prro.localeCompare(b.prro)), newItems, rows:rows.length};
+  ui.view = "import"; render();
+}
+function vImport(){
+  const head = top("Импорт из Checkbox", "Отчёт по товарам из кабинета checkbox.ua → документы «Реализация за смену» по точкам и дням");
+  const drop = `<div class="card"><label class="empty" id="dropzone" style="display:block;cursor:pointer;border:2px dashed var(--line);border-radius:var(--r);margin:14px">
+    <b>Перетащите сюда файл выгрузки или нажмите, чтобы выбрать</b>
+    В кабинете Checkbox: Звіти → Звіт по товарах → период → Excel. Можно несколько файлов сразу (за разные дни).
+    <input type="file" id="impfile" accept=".xlsx,.xls,.csv" multiple hidden></label>
+    <div class="pad hint" style="padding-top:0">Точка определяется по фискальному номеру ПРРО, товар — по коду Checkbox, штрихкоду или названию. Повторная загрузка того же дня не создаёт дублей: документ дня обновляется.</div></div>`;
+  if (!imp) return head + drop;
+  const opts = sel => `<option value="new" ${sel === "new" ? "selected" : ""}>+ Создать новую точку</option>` + sortedStores().map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+  const unknown = [...imp.prros.values()].filter(p => !p.known);
+  const resolve = p => imp.prros.get(p).storeId;
+  let upd = 0, dup = 0;
+  const rowsH = imp.days.map(d => { const sid = resolve(d.prro), id = sid && sid !== "new" ? "cb_" + sid + "_" + d.date : null, ex = id && byId("docs", id);
+    const manual = sid && sid !== "new" && S.docs.some(x => x.type === "sale" && x.from === sid && x.date === d.date && x.source !== "checkbox" && x.posted);
+    if (ex) upd++; if (manual) dup++;
+    const p = imp.prros.get(d.prro);
+    return `<tr><td>${dfmt(d.date)}</td><td><b>${sid === "new" ? esc(shortAddr(p.addr)) + ` <span class="pill t">новая</span>` : esc(storeName(sid))}</b> <span class="muted">· ПРРО ${esc(d.prro)}</span></td><td class="n">${d.lines.size}</td><td class="n">${money(d.disc)}</td><td class="n"><b>${money(d.total)}</b></td><td>${ex ? `<span class="pill b">обновится</span>` : `<span class="pill ok">новый</span>`}${manual ? ` <span class="pill c" title="За этот день уже есть проведённая ручная продажа">есть ручная продажа</span>` : ""}</td></tr>`; }).join("");
+  const T = imp.days.reduce((a, d) => a + d.total, 0);
+  return head + `<div class="filters"><button class="btn" data-act="imp-reset">Выбрать другой файл</button><span class="hint">${esc(imp.names.join(", "))} · строк: ${imp.rows}</span></div>
+  ${unknown.length ? `<div class="card pad" style="margin-bottom:14px;display:grid;gap:10px"><b>Новые кассы — укажите, к какой точке они относятся</b>
+    ${unknown.map(p => `<div class="fgrid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:end"><div><div><b>ПРРО ${esc(p.prro)}</b></div><div class="hint">${esc(p.addr || "адрес не указан")}</div></div><label>Точка<select data-prro="${esc(p.prro)}">${opts(p.storeId)}</select></label></div>`).join("")}
+    <div class="hint">Номер кассы запомнится в карточке точки — в следующий раз она определится сама.</div></div>` : ""}
+  ${imp.newItems.size ? `<div class="card pad" style="margin-bottom:14px"><b>Новые товары: ${imp.newItems.size}</b><div class="hint" style="margin:4px 0 8px">Будут добавлены в номенклатуру с ценой продажи из Checkbox. Закупочную цену укажите потом в карточке товара — без неё прибыль по этим товарам считается неверно.</div>
+    <div class="hint">${[...imp.newItems.values()].slice(0, 12).map(n => esc(n.name)).join(" · ")}${imp.newItems.size > 12 ? ` · и ещё ${imp.newItems.size - 12}` : ""}</div></div>` : ""}
+  <div class="tbl"><table><thead><tr><th>Дата</th><th>Точка</th><th class="n">Позиций</th><th class="n">Скидки, ₴</th><th class="n">Выручка, ₴</th><th>Статус</th></tr></thead><tbody>${rowsH}
+  <tr class="tot"><td colspan="4">Итого</td><td class="n">${money(T)}</td><td></td></tr></tbody></table></div>
+  ${dup ? `<div class="hint warn" style="margin-top:8px">За ${dup} дн. уже есть ручные продажи — после импорта удалите их или отмените проведение, иначе выручка задвоится.</div>` : ""}
+  <div class="actions" style="margin-top:14px;justify-content:flex-end"><span class="hint">${imp.days.length} документ(ов): ${imp.days.length - upd} новых, ${upd} обновится</span><button class="btn pri" data-act="imp-go" ${canWrite && !impFracErrors().length ? "" : "disabled"}>Загрузить в учёт</button></div>
+  ${impFracErrors().length ? `<div class="banner" style="margin-top:12px;background:var(--neg-weak)"><span><b>Нельзя загрузить:</b> в файле дробное количество у товаров с единицей «шт»: ${impFracErrors().slice(0, 8).map(esc).join(", ")}${impFracErrors().length > 8 ? "…" : ""}. Если товар весовой — поменяйте единицу на «кг» в «Номенклатуре», затем загрузите файл снова.</span></div>` : ""}`;
+}
+let importing = false;
+function impFracErrors(){
+  const bad = new Map();
+  for (const d of imp.days) for (const l of d.lines.values()) { if (l.key.startsWith("new:")) continue; const it = itemOf(l.key); if (!fracAllowed(it) && isFrac(Math.round(l.qty * 1000) / 1000)) bad.set(it.id, it.name); }
+  return [...bad.values()];
+}
+async function commitImport(){
+  if (imp && impFracErrors().length) { toast("Импорт остановлен: у штучных товаров дробное количество. Исправьте единицу измерения в «Номенклатуре».", "neg"); return; }
+  if (!imp || importing) return; importing = true;
+  const btn = document.querySelector('[data-act="imp-go"]'); if (btn) btn.disabled = true;
+  try {
+    // 1. stores
+    const sid = new Map();
+    for (const p of imp.prros.values()) {
+      if (p.storeId === "new") { const s = {id: uid("st"), name: shortAddr(p.addr), kind: "store", address: p.addr, prro: p.prro}; await put("stores", s); sid.set(p.prro, s.id); }
+      else { const s = byId("stores", p.storeId); sid.set(p.prro, p.storeId);
+        if (s && String(s.prro || "") !== p.prro && !(s.prroAlt || []).includes(p.prro)) await put("stores", s.prro ? {...s, prroAlt: [...(s.prroAlt || []), p.prro]} : {...s, prro: p.prro}); }
+    }
+    // 2. items
+    const iid = new Map(), news = [...imp.newItems.values()];
+    for (const n of news) { const ex = matchItem(n.code, n.bar, n.name); iid.set(n.key, ex ? ex.id : uid("i")); if (ex) n.exists = true; }
+    for (let i = 0; i < news.length; i += 6) await Promise.all(news.slice(i, i + 6).filter(n => !n.exists).map(n => put("items", {id: iid.get(n.key), name: n.name, group: n.group, unit: n.unit, buy: 0, price: r2(n.price), min: 0, cbCode: n.code || "", barcode: n.bar || ""})));
+    // 3. docs
+    let max = 0; for (const d of S.docs) if (d.type === "sale") { const k = parseInt(String(d.num || "").split("-")[1], 10); if (k > max) max = k; }
+    const docs = imp.days.map(d => { const st = sid.get(d.prro), id = "cb_" + st + "_" + d.date, ex = byId("docs", id);
+      const lines = [...d.lines.values()].filter(l => l.qty > 1e-9).map(l => ({item: iid.get(l.key) || l.key, qty: Math.round(l.qty * 1000) / 1000, price: r2(l.sum / l.qty), sum: r2(l.sum)}));
+      return {id, type: "sale", num: ex ? ex.num : "РЛ-" + String(++max).padStart(5, "0"), date: d.date, from: st, lines, posted: true, created: ex ? ex.created : Date.now(), updated: Date.now(), source: "checkbox", prro: d.prro, discount: r2(d.disc), total: r2(d.total), note: "Импорт Checkbox"}; });
+    for (let i = 0; i < docs.length; i += 6) { await Promise.all(docs.slice(i, i + 6).map(d => put("docs", d))); }
+    toast(`Загружено: ${docs.length} док., выручка ${money(imp.days.reduce((a, d) => a + d.total, 0))} ₴` + (news.filter(n => !n.exists).length ? `, новых товаров ${news.filter(n => !n.exists).length}` : ""));
+    imp = null; ui.view = "j:sale"; render();
+  } catch (e) { toast(writeErr(e), "neg"); if (btn) btn.disabled = false; }
+  finally { importing = false; }
+}
+
+/* ================= ERP module: organisations, money, staff, schedule, payroll, bank, P&L ================= */
+const ERP_TYPES = {
+  expense: {name:"Регистрация расходов", short:"Расход", plural:"Расходы", pre:"РР"},
+  money:   {name:"Движение денег", short:"Деньги", plural:"Движение денег", pre:"ДД"},
+  payroll: {name:"Начисление зарплаты", short:"Зарплата", plural:"Начисления зарплаты", pre:"НЗ"},
+};
+Object.assign(TYPES, ERP_TYPES);
+const POSITIONS = ["Продавец", "Старший продавец", "Оператор", "Менеджер", "Кладовщик", "Водитель", "Другое"];
+const ACC_KINDS = {cash: "Наличная касса", bank: "Расчётный счёт", card: "Эквайринг / терминал"};
+const MONEY_SRC = ["Выручка наличными", "Выручка безнал (эквайринг)", "Начальный остаток", "Взнос собственника", "Возврат от поставщика", "Прочее поступление"];
+const DEFAULT_ARTICLES = [
+  ["Аренда", "pl"], ["Коммунальные услуги", "pl"], ["Налоги (ЕН, ЕСВ)", "pl"], ["Банк и эквайринг", "pl"], ["Транспорт и топливо", "pl"],
+  ["Хозтовары и упаковка", "pl"], ["Ремонт и обслуживание", "pl"], ["Реклама", "pl"], ["Связь и интернет", "pl"], ["Охрана и видеонаблюдение", "pl"],
+  ["Прочие расходы", "pl"], ["Выплата зарплаты", "nopl"], ["Вывод собственнику", "nopl"], ["Перевод / возврат займа", "nopl"],
+];
+const orgName = id => byId("orgs", id)?.name || "—";
+const accName = id => byId("accounts", id)?.name || "—";
+const artName = id => byId("articles", id)?.name || "—";
+const empName = id => byId("employees", id)?.name || "—";
+const sortedBy = (col, f = "name") => S[col].slice().sort((a, b) => String(a[f] || "").localeCompare(String(b[f] || ""), "ru"));
+const activeEmps = () => sortedBy("employees").filter(e => e.active !== "no");
+const ym = d => String(d || "").slice(0, 7);
+const daysIn = m => new Date(+m.slice(0, 4), +m.slice(5, 7), 0).getDate();
+const monthName = m => { const n = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"][+m.slice(5, 7) - 1]; return n + " " + m.slice(0, 4); };
+const opt = (list, sel, empty) => (empty !== undefined ? `<option value="">${esc(empty)}</option>` : "") + list.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(sel ?? "") ? "selected" : ""}>${esc(t)}</option>`).join("");
+const orgOpts = (sel, empty) => opt(sortedBy("orgs").map(o => [o.id, o.name]), sel, empty);
+const accOpts = (sel, empty) => opt(sortedBy("accounts").map(a => [a.id, a.name]), sel, empty);
+const artOpts = (sel, empty) => opt(sortedBy("articles").map(a => [a.id, a.name]), sel, empty);
+const storeOpts = (sel, empty) => opt(retail().map(s => [s.id, s.name]), sel, empty);
+const empOpts = (sel, empty) => opt(activeEmps().map(e => [e.id, e.name]), sel, empty);
+
+/* ПринадлежностьТТ: store → org by date */
+function orgOfStore(store, date){
+  let best = null;
+  for (const o of S.owners) if (o.store === store && (o.from || "") <= date && (!best || (o.from || "") > (best.from || ""))) best = o;
+  return best ? best.org : "";
+}
+
+/* ---------- money register ---------- */
+function moneyMoves(){
+  const out = [];
+  for (const d of S.docs) {
+    if (!d.posted) continue;
+    const a = +d.amount || 0; if (!a) continue;
+    if (d.type === "expense" && d.account) out.push({date:d.date, acc:d.account, amt:-a, doc:d, what: artName(d.article)});
+    else if (d.type === "payment" && d.account) out.push({date:d.date, acc:d.account, amt:-a, doc:d, what: "Оплата: " + suppName(d.supplier)});
+    else if (d.type === "money") {
+      if (d.op === "transfer") { if (d.accFrom) out.push({date:d.date, acc:d.accFrom, amt:-a, doc:d, what:"Перемещение → " + accName(d.accTo)}); if (d.accTo) out.push({date:d.date, acc:d.accTo, amt:a, doc:d, what:"Перемещение ← " + accName(d.accFrom)}); }
+      else if (d.accTo) out.push({date:d.date, acc:d.accTo, amt:a, doc:d, what: d.source || "Поступление"});
+    }
+  }
+  return out.sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0);
+}
+function balances(atDate){ const b = new Map(); for (const m of moneyMoves()) if (!atDate || m.date <= atDate) b.set(m.acc, (b.get(m.acc) || 0) + m.amt); return b; }
+
+/* ---------- schedule & salary ---------- */
+const shiftDoc = (m, store) => byId("shifts", m + "_" + store);
+function shiftsOn(store, date){ const d = shiftDoc(ym(date), store); return (d && d.days && d.days[date.slice(8, 10)]) || []; }
+function dailyStoreSales(){
+  const m = new Map(); for (const x of ledger().moves) if (x.type === "sale") { const k = x.store + "|" + x.date; m.set(k, (m.get(k) || 0) + x.sum); } return m;
+}
+/* computed accrual for one employee in one month (from schedule) */
+function calcPay(emp, month, sales){
+  sales = sales || dailyStoreSales();
+  let shifts = 0, base = 0; const byStore = {};
+  for (const sd of S.shifts) {
+    if (sd.month !== month) continue;
+    for (const [day, ids] of Object.entries(sd.days || {})) {
+      if (!ids.includes(emp.id)) continue;
+      const date = month + "-" + day; shifts++;
+      const rev = sales.get(sd.store + "|" + date) || 0, share = rev / ids.length;
+      base += share;
+      const bs = byStore[sd.store] = byStore[sd.store] || {shifts:0, base:0}; bs.shifts++; bs.base += share;
+    }
+  }
+  const rate = num(emp.perShift), p = num(emp.pct), sal = num(emp.salary);
+  return {shifts, base, shiftPay: shifts * rate, pctPay: base * p / 100, salary: sal, byStore};
+}
+/* salary cost by store (and "" for общие) for a date range: posted payroll if present for the month, else estimate from schedule */
+function salaryCost(from, to){
+  const res = new Map(), add = (s, v) => res.set(s || "", (res.get(s || "") || 0) + v);
+  let estimated = false;
+  const months = new Set(); for (let d = from; d <= to; d = addDays(d, 1)) months.add(ym(d));
+  const sales = dailyStoreSales();
+  for (const m of months) {
+    const dim = daysIn(m), first = m + "-01", last = m + "-" + String(dim).padStart(2, "0");
+    const a = from > first ? from : first, b = to < last ? to : last;
+    const frac = (Math.round((new Date(b) - new Date(a)) / 864e5) + 1) / dim;
+    const pr = S.docs.filter(d => d.type === "payroll" && d.posted && d.month === m);
+    if (pr.length) { for (const d of pr) for (const l of d.lines || []) { const acc = num(l.accrued); const split = l.split && Object.keys(l.split).length ? l.split : {[l.store || ""]: 1}; for (const [s, w] of Object.entries(split)) add(s, acc * w * frac); } }
+    else {
+      for (const e of S.employees) {
+        if (e.active === "no") continue;
+        const c = calcPay(e, m, sales); let any = false;
+        // shift-based part: by actual shift days inside [a,b]
+        for (const sd of S.shifts) if (sd.month === m) for (const [day, ids] of Object.entries(sd.days || {})) {
+          const date = m + "-" + day; if (date < a || date > b || !ids.includes(e.id)) continue;
+          any = true; const rev = sales.get(sd.store + "|" + date) || 0;
+          add(sd.store, num(e.perShift) + rev / ids.length * num(e.pct) / 100);
+        }
+        if (num(e.salary)) { add(e.store || "", num(e.salary) * frac); any = true; }
+        if (any) estimated = true;
+      }
+    }
+  }
+  return {byStore: res, estimated};
+}
+function expensesIn(from, to){
+  return S.docs.filter(d => d.type === "expense" && d.posted && d.date >= from && d.date <= to && byId("articles", d.article)?.kind !== "nopl");
+}
+
+/* ---------- P&L by store ---------- */
+function pnl(from, to, orgFilter, spread){
+  const stores = retail().filter(s => !orgFilter || orgFilter === "all" || orgOfStore(s.id, to) === orgFilter);
+  const ids = new Set(stores.map(s => s.id));
+  const rows = new Map(stores.map(s => [s.id, {s, rev:0, cogs:0, sal:0, exp:0, common:0}]));
+  for (const m of ledger().moves) if (m.type === "sale" && m.date >= from && m.date <= to && rows.has(m.store)) { const r = rows.get(m.store); r.rev += m.sum; r.cogs += m.cogs; }
+  for (const m of ledger().moves) if (m.type === "writeoff" && m.date >= from && m.date <= to && rows.has(m.store)) rows.get(m.store).cogs += m.cogs;
+  const sc = salaryCost(from, to);
+  let commonSal = 0, commonExp = 0; const byArt = new Map();
+  for (const [s, v] of sc.byStore) { if (rows.has(s)) rows.get(s).sal += v; else if (!s) commonSal += v; }
+  for (const d of expensesIn(from, to)) {
+    if (orgFilter && orgFilter !== "all" && d.org && d.org !== orgFilter && !(d.store && ids.has(d.store))) continue;
+    const a = num(d.amount); byArt.set(d.article, (byArt.get(d.article) || 0) + a);
+    if (d.store && rows.has(d.store)) rows.get(d.store).exp += a; else if (!d.store) commonExp += a;
+  }
+  const totRev = [...rows.values()].reduce((t, r) => t + r.rev, 0);
+  if (spread) for (const r of rows.values()) r.common = totRev ? (commonSal + commonExp) * r.rev / totRev : 0;
+  for (const r of rows.values()) { r.gross = r.rev - r.cogs; r.net = r.gross - r.sal - r.exp - r.common; }
+  return {rows: [...rows.values()].sort((a, b) => b.rev - a.rev), commonSal, commonExp, byArt, estimated: sc.estimated};
+}
+
+/* ---------- generic reference list views ---------- */
+const REFS = {
+  orgs: {title:"Организации", sub:"ТОВ и ФОП, на которые оформлены точки", one:"организацию",
+    cols:[["name","Название"],["kind","Форма"],["code","ЄДРПОУ / ІПН"],["tax","Система налогообложения"]],
+    fields:[["name","Название","text",2],["kind","Форма","sel:ТОВ|ФОП|ПП"],["code","ЄДРПОУ / ІПН","text"],["tax","Налогообложение","text"],["note","Комментарий","text",2]]},
+  accounts: {title:"Кассы и счета", sub:"Где лежат деньги: наличные кассы точек, расчётные счета, эквайринг", one:"кассу или счёт",
+    cols:[["name","Название"],["kind","Вид", v => ACC_KINDS[v] || v],["org","Организация", orgName],["store","Точка", v => v ? storeName(v) : "—"],["iban","Счёт / ПРРО"]],
+    fields:[["name","Название","text",2],["kind","Вид","acckind"],["org","Организация","org"],["store","Точка (для кассы)","store"],["iban","IBAN / номер ПРРО","text"],["bank","Банк","text"],["note","Комментарий","text",2]]},
+  articles: {title:"Статьи расходов", sub:"«В прибыль» — уменьшает прибыль точки. «Не влияет» — движение денег без расхода (выплата начисленной зарплаты, вывод денег)", one:"статью",
+    cols:[["name","Статья"],["kind","Влияние", v => v === "nopl" ? "Не влияет на прибыль" : "Уменьшает прибыль"],["keys","Слова для банка"]],
+    fields:[["name","Название","text",2],["kind","Влияние на прибыль","sel:pl=Уменьшает прибыль|nopl=Не влияет на прибыль"],["keys","Слова в назначении платежа (через запятую) — для автоматической разноски выписки","text",2]]},
+  employees: {title:"Сотрудники", sub:"Условия оплаты: ставка за смену, % от выручки смены, оклад", one:"сотрудника",
+    cols:[["name","ФИО"],["position","Должность"],["store","Основная точка", v => v ? storeName(v) : "—"],["perShift","₴ за смену", v => num(v) ? money0(v) : "—"],["pct","% выручки", v => num(v) ? v + "%" : "—"],["salary","Оклад", v => num(v) ? money0(v) : "—"],["active","Статус", v => v === "no" ? "Уволен" : "Работает"]],
+    fields:[["name","ФИО","text",2],["position","Должность","sel:" + POSITIONS.join("|")],["store","Основная точка","store"],["org","Организация","org"],["phone","Телефон","text"],["perShift","Ставка за смену, ₴","num"],["pct","% от выручки смены","num"],["salary","Оклад в месяц, ₴","num"],["active","Статус","sel:yes=Работает|no=Уволен"],["note","Комментарий","text",2]]},
+};
+function vRef(col){
+  const R = REFS[col], rows = sortedBy(col);
+  return top(R.title, R.sub, `<button class="btn pri" data-e="ref-new" data-col="${col}" ${canWrite ? "" : "disabled"}>Добавить ${R.one}</button>`) +
+    (rows.length ? `<div class="tbl"><table><thead><tr>${R.cols.map(c => `<th>${c[1]}</th>`).join("")}</tr></thead><tbody>
+    ${rows.map(o => `<tr class="click" data-e="ref-open" data-col="${col}" data-id="${o.id}">${R.cols.map((c, i) => `<td>${i ? esc(c[2] ? c[2](o[c[0]]) : (o[c[0]] ?? "")) : `<b>${esc(o[c[0]])}</b>`}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+    : `<div class="card"><div class="empty"><b>Список пуст</b>Нажмите «Добавить ${R.one}».</div></div>`);
+}
+function refField([k, label, type, span], o){
+  const v = o[k] ?? "", st = span ? ` style="grid-column:1/-1"` : "";
+  let inp;
+  if (type === "text") inp = `<input type="text" data-r="${k}" value="${esc(v)}">`;
+  else if (type === "num") inp = `<input type="number" step="0.01" data-r="${k}" value="${esc(v)}">`;
+  else if (type === "org") inp = `<select data-r="${k}">${orgOpts(v, "—")}</select>`;
+  else if (type === "store") inp = `<select data-r="${k}">${storeOpts(v, "—")}</select>`;
+  else if (type === "acckind") inp = `<select data-r="${k}">${opt(Object.entries(ACC_KINDS), v)}</select>`;
+  else { const items = type.slice(4).split("|").map(x => x.includes("=") ? x.split("=") : [x, x]); inp = `<select data-r="${k}">${opt(items, v || items[0][0])}</select>`; }
+  return `<label${st}>${label}${inp}</label>`;
+}
+function openRef2(col, o){
+  const R = REFS[col]; edit = JSON.parse(JSON.stringify(o)); edit._kind = "ref2:" + col;
+  for (const f of R.fields) if (f[2].startsWith("sel:") && (edit[f[0]] === undefined || edit[f[0]] === "")) { const first = f[2].slice(4).split("|")[0]; edit[f[0]] = first.split("=")[0]; }
+  if (col === "accounts" && !edit.kind) edit.kind = "cash";
+  const used = !o._new && (col === "orgs" ? S.owners.some(x => x.org === o.id) || S.accounts.some(x => x.org === o.id) || S.docs.some(d => d.org === o.id)
+    : col === "accounts" ? S.docs.some(d => d.account === o.id || d.accFrom === o.id || d.accTo === o.id)
+    : col === "articles" ? S.docs.some(d => d.article === o.id)
+    : S.docs.some(d => (d.lines || []).some(l => l.emp === o.id)) || S.shifts.some(s => Object.values(s.days || {}).some(a => a.includes(o.id))));
+  openModal(`<div class="sheet narrow" role="dialog" aria-modal="true" aria-label="${esc(R.title)}">
+    <div class="sh-h"><h2>${o._new ? "Новая запись: " + esc(R.title.toLowerCase()) : esc(o.name)}</h2><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b"><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${R.fields.map(f => refField(f, edit)).join("")}</div>
+    ${used ? `<div class="hint">Используется в документах — удалить нельзя.${col === "employees" ? " Чтобы убрать из графика, поставьте статус «Уволен»." : ""}</div>` : ""}</div>
+    <div class="sh-f"><div>${o._new || used ? "" : `<button class="btn danger" data-e="ref2-del" ${canWrite ? "" : "disabled"}>Удалить</button>`}</div>
+    <div class="actions"><button class="btn" data-act="close">Отмена</button><button class="btn pri" data-e="ref2-save" ${canWrite ? "" : "disabled"}>Сохранить</button></div></div></div>`);
+}
+async function saveRef2(){
+  const o = JSON.parse(JSON.stringify(edit)), col = o._kind.slice(5); delete o._kind; delete o._new; delete o._arm;
+  if (!String(o.name || "").trim()) { toast("Заполните название.", "neg"); return; }
+  o.name = o.name.trim();
+  if (col === "employees") for (const k of ["perShift", "pct", "salary"]) o[k] = num(o[k]);
+  try { await put(col, o); toast("Сохранено"); closeModal(); } catch (e) { toast(writeErr(e), "neg"); }
+}
+
+/* ПринадлежностьТТ */
+function vOwners(){
+  const rows = S.owners.slice().sort((a, b) => storeName(a.store).localeCompare(storeName(b.store), "ru") || (a.from || "").localeCompare(b.from || ""));
+  return top("Принадлежность точек", "Какой организации принадлежит точка и с какой даты. Отчёты по организации берут точки по этой таблице",
+    `<button class="btn pri" data-e="own-add" ${canWrite && S.orgs.length ? "" : "disabled"}>Добавить запись</button>`) +
+  (S.orgs.length ? "" : `<div class="banner"><span>Сначала добавьте организации в справочник «Организации».</span><button class="btn sm" data-go="orgs">Организации</button></div>`) +
+  `<div class="tbl"><table><thead><tr><th>Точка</th><th>Организация</th><th>С даты</th><th>Сейчас</th><th></th></tr></thead><tbody>
+  ${rows.map(o => `<tr><td><select data-own="${o.id}:store" ${canWrite ? "" : "disabled"}>${storeOpts(o.store)}</select></td><td><select data-own="${o.id}:org" ${canWrite ? "" : "disabled"}>${orgOpts(o.org)}</select></td>
+    <td><input type="date" data-own="${o.id}:from" value="${esc(o.from || "")}" ${canWrite ? "" : "disabled"}></td>
+    <td>${orgOfStore(o.store, today()) === o.org ? `<span class="pill ok">действует</span>` : `<span class="pill draft">в истории</span>`}</td>
+    <td><button class="x" data-e="own-del" data-id="${o.id}" aria-label="Удалить" ${canWrite ? "" : "disabled"}>×</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">Записей нет.</td></tr>`}
+  </tbody></table></div>
+  <div class="hint" style="margin-top:8px">Пример: точка «Мира» принадлежала ТОВ, а с 01.11.2026 переходит на ФОП — добавьте вторую запись «Мира → ФОП с 01.11.2026». Старые продажи останутся за ТОВ.</div>`;
+}
+
+/* ---------- money documents ---------- */
+function erpNewDoc(type){
+  const d = {id: uid("d"), type, num: nextNum(type), date: today(), posted: false, created: Date.now(), note: ""};
+  if (type === "expense") { d.amount = ""; d.article = ""; d.store = ""; d.org = S.orgs[0]?.id || ""; d.account = ""; d.counterparty = ""; }
+  if (type === "money") { d.op = "in"; d.amount = ""; d.source = MONEY_SRC[0]; d.accTo = ""; d.accFrom = ""; d.store = ""; }
+  if (type === "payroll") { const dt = new Date(today() + "T12:00:00"); if (dt.getDate() <= 10) dt.setMonth(dt.getMonth() - 1); d.month = iso(dt).slice(0, 7); d.lines = []; }
+  edit = d; edit._kind = "doc"; edit._new = true; erpRender();
+}
+function erpRender(){
+  const d = edit; if (d.type === "payroll") return payrollRender();
+  const ro = !canWrite, t = TYPES[d.type];
+  let f = [`<label>Дата<input type="date" data-h="date" value="${esc(d.date)}"></label>`];
+  if (d.type === "expense") f.push(
+    `<label>Статья расходов<select data-h="article">${artOpts(d.article, "— выберите —")}</select></label>`,
+    `<label>Сумма, ₴<input type="number" step="0.01" data-h="amount" value="${esc(d.amount ?? "")}"></label>`,
+    `<label>Точка<select data-h="store">${storeOpts(d.store, "Общий расход (вся сеть)")}</select></label>`,
+    `<label>Организация<select data-h="org">${orgOpts(d.org, "—")}</select></label>`,
+    `<label>Оплачено из<select data-h="account">${accOpts(d.account, "— не указано —")}</select></label>`,
+    `<label>Кому (контрагент)<input type="text" data-h="counterparty" value="${esc(d.counterparty || "")}"></label>`);
+  if (d.type === "money") f.push(
+    `<label>Операция<select data-h="op">${opt([["in","Поступление денег"],["transfer","Перемещение между кассами/счетами"]], d.op)}</select></label>`,
+    `<label>Сумма, ₴<input type="number" step="0.01" data-h="amount" value="${esc(d.amount ?? "")}"></label>`,
+    d.op === "transfer" ? `<label>Откуда<select data-h="accFrom">${accOpts(d.accFrom, "— выберите —")}</select></label>` : `<label>Источник<select data-h="source">${opt(MONEY_SRC.map(x => [x, x]), d.source)}</select></label>`,
+    `<label>${d.op === "transfer" ? "Куда" : "Касса / счёт"}<select data-h="accTo">${accOpts(d.accTo, "— выберите —")}</select></label>`,
+    `<label>Точка<select data-h="store">${storeOpts(d.store, "—")}</select></label>`);
+  openModal(`<div class="sheet narrow" role="dialog" aria-modal="true" aria-label="${esc(t.name)}">
+    <div class="sh-h"><div><h2>${esc(t.name)} ${esc(d.num)}</h2><div class="hint" style="margin-top:4px"><span class="pill ${d.posted ? "ok" : "draft"}">${d.posted ? "Проведён" : d._new ? "Новый" : "Черновик"}</span>${d.bank ? ` <span class="pill t">из выписки</span>` : ""}</div></div><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b"><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${f.join("")}
+      <label style="grid-column:1/-1">Комментарий / назначение платежа<input type="text" data-h="note" value="${esc(d.note || "")}"></label></div>
+      ${!S.accounts.length ? `<div class="hint">Справочник «Кассы и счета» пуст — добавьте кассы, чтобы видеть остатки денег.</div>` : ""}</div>
+    <div class="sh-f"><div>${d._new ? "" : `<button class="btn danger ${d._arm ? "arm" : ""}" data-act="doc-del" ${ro ? "disabled" : ""}>${d._arm ? "Точно удалить?" : "Удалить"}</button>`}</div>
+      <div class="actions">${d.posted ? `<button class="btn" data-e="erp-save" data-post="0" ${ro ? "disabled" : ""}>Отменить проведение</button>` : `<button class="btn" data-e="erp-save" data-post="0" ${ro ? "disabled" : ""}>Записать черновик</button>`}
+      <button class="btn pri" data-e="erp-save" data-post="1" ${ro ? "disabled" : ""}>Провести и закрыть</button></div></div></div>`);
+}
+async function erpSave(post){
+  const d = JSON.parse(JSON.stringify(edit)); delete d._kind; delete d._new; delete d._arm;
+  d.posted = post; d.updated = Date.now();
+  if (d.type !== "payroll") d.amount = num(d.amount);
+  if (post) {
+    if (!d.date) return toast("Укажите дату.", "neg");
+    if (d.type === "expense" && !d.article) return toast("Выберите статью расходов.", "neg");
+    if (d.type !== "payroll" && !(d.amount > 0)) return toast("Укажите сумму больше нуля.", "neg");
+    if (d.type === "money" && !d.accTo) return toast("Выберите кассу или счёт.", "neg");
+    if (d.type === "money" && d.op === "transfer" && (!d.accFrom || d.accFrom === d.accTo)) return toast("Выберите разные кассы «откуда» и «куда».", "neg");
+    if (d.type === "payroll" && !d.lines.length) return toast("Заполните ведомость — нажмите «Заполнить по графику».", "neg");
+  }
+  if (d.type === "payroll") { d.lines = d.lines.map(l => payLine(l)); d.total = r2(d.lines.reduce((t, l) => t + l.accrued, 0)); d.date = d.month + "-" + String(daysIn(d.month)).padStart(2, "0"); }
+  else d.total = d.amount;
+  try { await put("docs", d); toast(post ? `${TYPES[d.type].short} ${d.num} проведён` : `${d.num} сохранён`); closeModal(); } catch (e) { toast(writeErr(e), "neg"); }
+}
+
+/* ---------- payroll ---------- */
+function payLine(l){
+  const n = k => num(l[k]);
+  const accrued = r2(n("shiftPay") + n("pctPay") + n("salary") + n("bonus") - n("fine"));
+  return Object.assign({}, l, {accrued, toPay: r2(accrued - n("advance"))});
+}
+function fillPayroll(){
+  const m = edit.month, sales = dailyStoreSales(), keep = new Map((edit.lines || []).map(l => [l.emp, l]));
+  edit.lines = [];
+  for (const e of activeEmps()) {
+    const c = calcPay(e, m, sales);
+    if (!c.shifts && !num(e.salary)) continue;
+    const old = keep.get(e.id) || {};
+    const split = {}; const tot = Object.values(c.byStore).reduce((t, x) => t + x.shifts, 0);
+    if (tot) for (const [s, x] of Object.entries(c.byStore)) split[s] = x.shifts / tot; else split[e.store || ""] = 1;
+    edit.lines.push(payLine({emp: e.id, store: e.store || "", shifts: c.shifts, rate: num(e.perShift), shiftPay: r2(c.shiftPay), base: r2(c.base), pct: num(e.pct), pctPay: r2(c.pctPay), salary: num(e.salary), bonus: old.bonus ?? "", fine: old.fine ?? "", advance: old.advance ?? "", split}));
+  }
+  if (!edit.lines.length) toast("За " + monthName(m) + " нет смен в графике и нет сотрудников с окладом.", "neg");
+  payrollRender();
+}
+function payrollRender(){
+  const d = edit, ro = !canWrite, L = (d.lines || []).map(payLine);
+  const T = k => L.reduce((t, l) => t + num(l[k]), 0);
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-label="Начисление зарплаты">
+    <div class="sh-h"><div><h2>Начисление зарплаты ${esc(d.num)} · ${monthName(d.month)}</h2><div class="hint" style="margin-top:4px"><span class="pill ${d.posted ? "ok" : "draft"}">${d.posted ? "Проведён" : d._new ? "Новый" : "Черновик"}</span></div></div><button class="x" data-act="close" aria-label="Закрыть">×</button></div>
+    <div class="sh-b">
+      <div class="filters"><label>Месяц<input type="month" data-e-in="pr-month" value="${esc(d.month)}" ${ro ? "disabled" : ""}></label>
+        <button class="btn" data-e="pr-fill" ${ro ? "disabled" : ""}>Заполнить по графику</button>
+        <span class="hint">Смены — из «Графика работы», % — от выручки точки в дни смен (делится на всех, кто был на смене).</span></div>
+      ${L.length ? `<div class="tbl"><table class="lines"><thead><tr><th>Сотрудник</th><th class="n">Смен</th><th class="n">За смены</th><th class="n">Выручка смен</th><th class="n">% выручки</th><th class="n">Оклад</th><th class="n">Премия</th><th class="n">Штраф</th><th class="n">Начислено</th><th class="n">Аванс</th><th class="n">К выплате</th><th></th></tr></thead><tbody>
+      ${L.map((l, i) => `<tr><td><b>${esc(empName(l.emp))}</b><div class="hint">${esc(byId("employees", l.emp)?.position || "")}${l.rate ? " · " + money0(l.rate) + " ₴/смена" : ""}${l.pct ? " · " + l.pct + "%" : ""}</div></td>
+        <td class="n">${l.shifts}</td><td class="n">${money(l.shiftPay)}</td><td class="n muted">${money(l.base)}</td><td class="n">${money(l.pctPay)}</td><td class="n">${money(l.salary)}</td>
+        ${["bonus","fine"].map(k => `<td class="n"><input class="q" type="number" step="0.01" data-pr="${i}:${k}" value="${esc(l[k] ?? "")}" ${ro ? "disabled" : ""} aria-label="${k}"></td>`).join("")}
+        <td class="n" id="pra${i}"><b>${money(l.accrued)}</b></td>
+        <td class="n"><input class="q" type="number" step="0.01" data-pr="${i}:advance" value="${esc(l.advance ?? "")}" ${ro ? "disabled" : ""} aria-label="Аванс"></td>
+        <td class="n" id="prp${i}">${money(l.toPay)}</td><td><button class="x" data-e="pr-rm" data-i="${i}" aria-label="Убрать" ${ro ? "disabled" : ""}>×</button></td></tr>`).join("")}
+      <tr class="tot"><td>Итого</td><td class="n">${T("shifts")}</td><td class="n">${money(T("shiftPay"))}</td><td></td><td class="n">${money(T("pctPay"))}</td><td class="n">${money(T("salary"))}</td><td class="n">${money(T("bonus"))}</td><td class="n">${money(T("fine"))}</td><td class="n" id="prta">${money(T("accrued"))}</td><td class="n">${money(T("advance"))}</td><td class="n" id="prtp">${money(T("toPay"))}</td><td></td></tr>
+      </tbody></table></div>` : `<div class="empty"><b>Ведомость пустая</b>Выберите месяц и нажмите «Заполнить по графику».</div>`}
+      <div class="hint">Проведённое начисление попадает в «Прибыль по ТТ» как расход на зарплату. Саму выплату денег проведите документом «Расход» со статьёй «Выплата зарплаты» — она не уменьшает прибыль повторно.</div>
+      <label class="fgrid" style="grid-template-columns:1fr"><span class="hint">Комментарий</span><input type="text" data-h="note" value="${esc(d.note || "")}"></label></div>
+    <div class="sh-f"><div>${d._new ? "" : `<button class="btn danger ${d._arm ? "arm" : ""}" data-act="doc-del" ${ro ? "disabled" : ""}>${d._arm ? "Точно удалить?" : "Удалить"}</button>`}</div>
+      <div class="actions"><span class="hint">Начислено:</span> <span class="total">${money(T("accrued"))} ₴</span>
+      <button class="btn" data-e="erp-save" data-post="0" ${ro ? "disabled" : ""}>${d.posted ? "Отменить проведение" : "Записать черновик"}</button>
+      <button class="btn pri" data-e="erp-save" data-post="1" ${ro ? "disabled" : ""}>Провести и закрыть</button></div></div></div>`);
+}
+
+/* ---------- schedule view ---------- */
+ui.shMonth = ym(today()); ui.shStore = ""; let shDraft = null;
+function vSchedule(){
+  const stores = retail(); if (!ui.shStore && stores[0]) ui.shStore = stores[0].id;
+  const m = ui.shMonth, st = ui.shStore, dim = daysIn(m);
+  const saved = shiftDoc(m, st);
+  if (!shDraft || shDraft.key !== m + "_" + st) shDraft = {key: m + "_" + st, days: JSON.parse(JSON.stringify(saved?.days || {})), extra: [], dirty: false};
+  const inSched = new Set(Object.values(shDraft.days).flat());
+  const emps = activeEmps().filter(e => e.store === st || inSched.has(e.id) || shDraft.extra.includes(e.id));
+  const others = activeEmps().filter(e => !emps.includes(e));
+  const sales = dailyStoreSales();
+  const dd = i => String(i).padStart(2, "0");
+  const wd = i => ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][new Date(m + "-" + dd(i) + "T12:00:00").getDay()];
+  const head = Array.from({length: dim}, (_, k) => k + 1);
+  const cnt = i => (shDraft.days[dd(i)] || []).length;
+  return top("График работы", "Нажмите на клетку, чтобы поставить или снять смену. По графику считается зарплата",
+    `<button class="btn" data-e="sh-copy" ${canWrite ? "" : "disabled"}>Скопировать прошлый месяц</button><button class="btn pri" data-e="sh-save" ${canWrite && shDraft.dirty ? "" : "disabled"}>Сохранить график</button>`) + `
+  <div class="filters"><label>Месяц<input type="month" data-e-in="sh-month" value="${m}"></label><label>Точка<select data-e-in="sh-store">${storeOpts(st)}</select></label>
+  ${others.length ? `<label>Добавить в график<select data-e-in="sh-add">${empOpts("", "— сотрудник с другой точки —").replace(/<option value="([^"]+)"/g, (s, id) => emps.some(e => e.id === id) ? s + " hidden" : s)}</select></label>` : ""}
+  ${shDraft.dirty ? `<span class="pill b">есть несохранённые изменения</span>` : ""}</div>
+  ${emps.length ? `<div class="tbl"><table class="sched"><thead><tr><th>Сотрудник</th>${head.map(i => `<th class="d ${/Сб|Вс/.test(wd(i)) ? "we" : ""}">${i}<br><span>${wd(i)}</span></th>`).join("")}<th class="n">Смен</th></tr></thead><tbody>
+  ${emps.map(e => { const n = head.filter(i => (shDraft.days[dd(i)] || []).includes(e.id)).length;
+    return `<tr><td><b>${esc(e.name)}</b><div class="hint">${esc(e.position || "")}${e.store && e.store !== st ? " · " + esc(storeName(e.store)) : ""}</div></td>
+    ${head.map(i => { const on = (shDraft.days[dd(i)] || []).includes(e.id); return `<td class="d"><button class="cell ${on ? "on" : ""}" data-e="sh-toggle" data-emp="${e.id}" data-day="${dd(i)}" aria-label="${esc(e.name)} ${i}" aria-pressed="${on}" ${canWrite ? "" : "disabled"}>${on ? "●" : ""}</button></td>`; }).join("")}
+    <td class="n"><b>${n}</b></td></tr>`; }).join("")}
+  <tr class="tot"><td>На смене</td>${head.map(i => `<td class="d ${cnt(i) ? "" : "warn"}">${cnt(i) || "!"}</td>`).join("")}<td></td></tr>
+  <tr><td class="muted">Выручка, тыс ₴</td>${head.map(i => { const v = sales.get(st + "|" + m + "-" + dd(i)) || 0; return `<td class="d muted">${v ? (v / 1000).toFixed(1).replace(".", ",") : ""}</td>`; }).join("")}<td></td></tr>
+  </tbody></table></div>
+  <div class="hint" style="margin-top:8px">«!» — день, когда на точке никто не стоит. Выручка — из загруженных продаж Checkbox.</div>`
+  : `<div class="card"><div class="empty"><b>У этой точки нет сотрудников</b>Добавьте продавцов в справочник «Сотрудники» и укажите им основную точку.<div class="actions" style="justify-content:center;margin-top:10px"><button class="btn pri" data-go="employees">Сотрудники</button></div></div></div>`}`;
+}
+
+/* ---------- reports ---------- */
+ui.mnAcc = "all"; ui.plOrg = "all"; ui.plSpread = true;
+function vMoney(){
+  const mv = moneyMoves(), accs = sortedBy("accounts");
+  const rows = accs.map(a => { let o = 0, i = 0, out = 0; for (const m of mv) { if (m.acc !== a.id) continue; if (m.date < ui.from) o += m.amt; else if (m.date <= ui.to) { if (m.amt > 0) i += m.amt; else out -= m.amt; } } return {a, o, i, out, c: o + i - out}; });
+  const T = rows.reduce((t, r) => ({o: t.o + r.o, i: t.i + r.i, out: t.out + r.out, c: t.c + r.c}), {o:0, i:0, out:0, c:0});
+  const det = mv.filter(m => inPeriod(m.date) && (ui.mnAcc === "all" || m.acc === ui.mnAcc)).reverse();
+  lastTable = {name: "Денежные средства", head: ["Касса / счёт", "Остаток на начало", "Поступило", "Списано", "Остаток на конец"], rows: rows.map(r => [r.a.name, r2(r.o), r2(r.i), r2(r.out), r2(r.c)])};
+  return top("Денежные средства", `Остатки и движение по кассам и счетам · ${dfmt(ui.from)} — ${dfmt(ui.to)}`,
+    `<button class="btn" data-new="money" ${canWrite ? "" : "disabled"}>+ Поступление / перемещение</button><button class="btn" data-new="expense" ${canWrite ? "" : "disabled"}>+ Расход</button>` + csvBtn()) + `
+  <div class="filters">${periodCtl()}</div>
+  ${accs.length ? `<div class="tbl"><table><thead><tr><th>Касса / счёт</th><th>Вид</th><th class="n">На начало</th><th class="n">Поступило</th><th class="n">Списано</th><th class="n">На конец</th></tr></thead><tbody>
+  ${rows.map(r => `<tr class="click" data-e="mn-acc" data-id="${r.a.id}"><td><b>${esc(r.a.name)}</b></td><td class="muted">${esc(ACC_KINDS[r.a.kind] || "")}</td><td class="n">${money(r.o)}</td><td class="n pos">${money(r.i)}</td><td class="n">${money(r.out)}</td><td class="n ${r.c < 0 ? "neg" : ""}"><b>${money(r.c)}</b></td></tr>`).join("")}
+  <tr class="tot"><td colspan="2">Итого</td><td class="n">${money(T.o)}</td><td class="n">${money(T.i)}</td><td class="n">${money(T.out)}</td><td class="n">${money(T.c)}</td></tr></tbody></table></div>
+  <h3 style="margin:18px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Движения ${ui.mnAcc === "all" ? "по всем счетам" : "· " + esc(accName(ui.mnAcc)) + ` <a href="#" data-e="mn-acc" data-id="all" style="color:var(--accent);text-transform:none;letter-spacing:0">показать все</a>`}</h3>
+  ${det.length ? `<div class="tbl"><table><thead><tr><th>Дата</th><th>Документ</th><th>Касса / счёт</th><th>Операция</th><th class="n">Сумма, ₴</th></tr></thead><tbody>
+  ${det.slice(0, 300).map(m => `<tr class="click" data-open="${m.doc.id}"><td>${dfmt(m.date)}</td><td>${esc(TYPES[m.doc.type]?.short || "")} <b>${esc(m.doc.num)}</b></td><td>${esc(accName(m.acc))}</td><td>${esc(m.what)}${m.doc.counterparty ? ` <span class="muted">· ${esc(m.doc.counterparty)}</span>` : ""}</td><td class="n ${m.amt > 0 ? "pos" : ""}">${m.amt > 0 ? "+" : ""}${money(m.amt)}</td></tr>`).join("")}</tbody></table></div>`
+  : `<div class="card"><div class="empty"><b>Движений за период нет</b>Загрузите банковскую выписку или внесите расход / поступление.</div></div>`}`
+  : `<div class="card"><div class="empty"><b>Нет касс и счетов</b>Добавьте наличные кассы точек и расчётные счета.<div class="actions" style="justify-content:center;margin-top:10px"><button class="btn pri" data-go="accounts">Кассы и счета</button></div></div></div>`}`;
+}
+function vPnl(){
+  const P = pnl(ui.from, ui.to, ui.plOrg, ui.plSpread), R = P.rows;
+  const T = R.reduce((t, r) => { for (const k of ["rev","cogs","gross","sal","exp","common","net"]) t[k] += r[k]; return t; }, {rev:0, cogs:0, gross:0, sal:0, exp:0, common:0, net:0});
+  const unspread = ui.plSpread ? 0 : P.commonSal + P.commonExp;
+  const arts = [...P.byArt].sort((a, b) => b[1] - a[1]);
+  lastTable = {name: "Прибыль по ТТ", head: ["Точка", "Выручка", "Себестоимость", "Валовая прибыль", "Зарплата", "Расходы точки", "Общие расходы", "Чистая прибыль", "Рентабельность %"],
+    rows: R.map(r => [r.s.name, r2(r.rev), r2(r.cogs), r2(r.gross), r2(r.sal), r2(r.exp), r2(r.common), r2(r.net), r.rev ? r2(r.net / r.rev * 100) : ""])};
+  return top("Прибыль по ТТ", `Выручка − себестоимость − зарплата − расходы = чистая прибыль · ${dfmt(ui.from)} — ${dfmt(ui.to)}`, csvBtn()) + `
+  <div class="filters">${periodCtl()} <label>Организация<select data-e-in="pl-org"><option value="all">Все организации</option>${orgOpts(ui.plOrg)}</select></label>
+  <label style="flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px"><input type="checkbox" data-e-in="pl-spread" ${ui.plSpread ? "checked" : ""}> Распределить общие расходы по выручке</label></div>
+  ${P.estimated ? `<div class="banner"><span>Зарплата за период посчитана <b>по графику</b> (оценка) — начисление за месяц ещё не проведено.</span><button class="btn sm" data-new="payroll">Начислить зарплату</button></div>` : ""}
+  <div class="tbl"><table><thead><tr><th>Точка</th><th class="n">Выручка</th><th class="n">Себестоимость</th><th class="n">Валовая</th><th class="n">Зарплата</th><th class="n">Расходы точки</th><th class="n">Общие</th><th class="n">Чистая прибыль</th><th class="n">Рентаб.</th></tr></thead><tbody>
+  ${R.map(r => `<tr><td><b>${esc(r.s.name)}</b><div class="hint">${esc(orgName(orgOfStore(r.s.id, ui.to)))}</div></td><td class="n">${money0(r.rev)}</td><td class="n muted">${money0(r.cogs)}</td><td class="n">${money0(r.gross)}</td><td class="n">${money0(r.sal)}</td><td class="n">${money0(r.exp)}</td><td class="n muted">${money0(r.common)}</td><td class="n ${r.net < 0 ? "neg" : "pos"}"><b>${money0(r.net)}</b></td><td class="n ${r.net < 0 ? "neg" : ""}">${pct(r.rev ? r.net / r.rev * 100 : NaN)}</td></tr>`).join("")}
+  ${unspread ? `<tr><td class="muted">Общие расходы (не распределены)</td><td colspan="3"></td><td class="n">${money0(P.commonSal)}</td><td class="n">${money0(P.commonExp)}</td><td></td><td class="n neg">−${money0(unspread)}</td><td></td></tr>` : ""}
+  <tr class="tot"><td>Итого по сети</td><td class="n">${money0(T.rev)}</td><td class="n">${money0(T.cogs)}</td><td class="n">${money0(T.gross)}</td><td class="n">${money0(T.sal + (ui.plSpread ? 0 : P.commonSal))}</td><td class="n">${money0(T.exp + (ui.plSpread ? 0 : P.commonExp))}</td><td class="n">${money0(T.common)}</td><td class="n">${money0(T.net - unspread)}</td><td class="n">${pct(T.rev ? (T.net - unspread) / T.rev * 100 : NaN)}</td></tr></tbody></table></div>
+  <div class="grid2" style="margin-top:14px"><div class="card"><h3>Расходы по статьям</h3><div class="pad list">${arts.length ? arts.map(([a, v]) => `<div class="row" data-go="j:expense"><span>${esc(artName(a))}</span><span class="num">${money(v)} ₴</span></div>`).join("") : `<div class="muted">Расходов за период нет. Загрузите выписку банка или внесите документ «Расход».</div>`}</div></div>
+  <div class="card"><h3>Как считается</h3><div class="pad hint" style="display:grid;gap:6px"><div>Себестоимость — по закупочным ценам, а если их нет — по наценке группы.</div><div>Зарплата — из проведённого начисления за месяц (пропорционально дням периода), а если его нет — по графику и условиям сотрудника.</div><div>Расходы точки — документы «Расход» с указанной точкой. Общие — без точки (офис, бухгалтер, общий транспорт).</div><div>Статьи «Не влияет на прибыль» (выплата зарплаты, вывод денег) здесь не учитываются.</div></div></div></div>`;
+}
+function vDirector(){
+  const len = Math.round((new Date(ui.to) - new Date(ui.from)) / 864e5) + 1, pf = addDays(ui.from, -len), pt = addDays(ui.from, -1);
+  const P = pnl(ui.from, ui.to, "all", true), Pp = pnl(pf, pt, "all", true);
+  const sum = (X, k) => X.rows.reduce((t, r) => t + r[k], 0);
+  const rev = sum(P, "rev"), gross = sum(P, "gross"), net = sum(P, "net"), sal = sum(P, "sal") + P.commonSal, exp = sum(P, "exp") + P.commonExp;
+  const prevRev = sum(Pp, "rev"), prevNet = sum(Pp, "net");
+  const delta = (a, b) => b ? ((a - b) / Math.abs(b) * 100) : NaN;
+  const chip = v => isFinite(v) ? `<span class="pill ${v >= 0 ? "ok" : "c"}">${v >= 0 ? "▲" : "▼"} ${pct(Math.abs(v))}</span>` : `<span class="pill draft">нет данных</span>`;
+  const bal = balances(); let cash = 0; for (const v of bal.values()) cash += v;
+  let debt = 0; for (const v of debtNow().values()) debt += v;
+  const prev = new Map(Pp.rows.map(r => [r.s.id, r]));
+  const maxRev = Math.max(1, ...P.rows.map(r => r.rev));
+  const arts = [...P.byArt].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  return top("Панель директора", `${dfmt(ui.from)} — ${dfmt(ui.to)} · сравнение с ${dfmt(pf)} — ${dfmt(pt)}`, periodCtl()) + `
+  <div class="kpis">
+    <div class="card kpi"><div class="l">Выручка</div><div class="v">${money0(rev)} ₴</div><div class="s">${chip(delta(rev, prevRev))} к прошлому периоду</div></div>
+    <div class="card kpi"><div class="l">Валовая прибыль</div><div class="v">${money0(gross)} ₴</div><div class="s">маржа ${pct(rev ? gross / rev * 100 : NaN)}</div></div>
+    <div class="card kpi"><div class="l">Чистая прибыль</div><div class="v ${net < 0 ? "neg" : ""}">${money0(net)} ₴</div><div class="s">${chip(delta(net, prevNet))} · рентабельность ${pct(rev ? net / rev * 100 : NaN)}</div></div>
+    <div class="card kpi"><div class="l">Зарплата и расходы</div><div class="v">${money0(sal + exp)} ₴</div><div class="s">ЗП ${money0(sal)} · расходы ${money0(exp)}${P.estimated ? " · ЗП по графику" : ""}</div></div>
+  </div>
+  <div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="card kpi"><div class="l">Деньги на кассах и счетах сейчас</div><div class="v">${money0(cash)} ₴</div><div class="s"><a href="#" data-go="r-money" style="color:var(--accent)">Денежные средства</a></div></div>
+    <div class="card kpi"><div class="l">Долг поставщикам</div><div class="v ${debt > 0 ? "warn" : ""}">${money0(debt)} ₴</div><div class="s"><a href="#" data-go="r-supp" style="color:var(--accent)">Расчёты с поставщиками</a></div></div>
+  </div>
+  <div class="grid2"><div class="card"><h3>Точки: выручка и чистая прибыль</h3><div class="pad"><div class="tbl" style="border:0"><table><thead><tr><th>Точка</th><th>Выручка</th><th class="n">Чистая</th><th class="n">Рентаб.</th><th class="n">Выручка к прошлому</th></tr></thead><tbody>
+    ${P.rows.map(r => { const p = prev.get(r.s.id); return `<tr><td><b>${esc(r.s.name)}</b></td><td style="min-width:140px"><span class="share" style="width:90px"><i style="width:${(r.rev / maxRev * 100).toFixed(1)}%"></i></span><span class="num">${money0(r.rev)}</span></td><td class="n ${r.net < 0 ? "neg" : "pos"}">${money0(r.net)}</td><td class="n">${pct(r.rev ? r.net / r.rev * 100 : NaN)}</td><td class="n">${chip(delta(r.rev, p?.rev || 0))}</td></tr>`; }).join("")}
+    </tbody></table></div></div></div>
+  <div class="card"><h3>Крупнейшие расходы</h3><div class="pad list">${arts.length ? arts.map(([a, v]) => `<div class="row" data-go="r-pnl"><span>${esc(artName(a))}</span><span class="num">${money0(v)} ₴</span></div>`).join("") : `<div class="muted">Расходов за период нет.</div>`}
+    <div class="row" data-go="r-pnl"><span><b>Зарплата</b></span><span class="num">${money0(sal)} ₴</span></div></div></div></div>`;
+}
+
+/* ---------- bank statement import ---------- */
+let bankImp = null;
+ui.bankAcc = "";
+const B_COLS = {date:["дата операції","дата","дата проводки","дата і час операції"], amount:["сума","сума в валюті рахунку","сума, грн","сума операції"], debit:["дебет","витрата","списання"], credit:["кредит","надходження","зарахування"],
+  type:["тип","тип операції","напрямок"], party:["контрагент","назва контрагента","кореспондент","назва кореспондента","отримувач/платник"], code:["єдрпоу контрагента","код контрагента","єдрпоу","єдрпоу кореспондента","код кореспондента"], purpose:["призначення платежу","призначення","опис операції","деталі операції"]};
+function guessCol(H, keys){ for (const k of keys) { const i = H.findIndex(h => h === k); if (i >= 0) return i; } for (const k of keys) { const i = H.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; }
+async function readBank(file){
+  if (typeof XLSX === "undefined") return toast("Модуль чтения Excel ещё загружается. Повторите через пару секунд.", "neg");
+  let arr;
+  try { const wb = /\.csv$/i.test(file.name) ? XLSX.read(await file.text(), {type:"string", raw:true}) : XLSX.read(await file.arrayBuffer(), {type:"array", cellDates:true});
+    arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:true, defval:null}); }
+  catch (e) { return toast("Не удалось прочитать файл: " + (e.message || e), "neg"); }
+  let hi = -1, best = 0;
+  arr.slice(0, 40).forEach((r, i) => { const H = (r || []).map(c => nrm(c)); const sc = Object.values(B_COLS).filter(keys => guessCol(H, keys) >= 0).length; if (sc > best) { best = sc; hi = i; } });
+  if (hi < 0 || best < 2) return toast("Не нашёл в файле строку заголовков (Дата, Сума, Призначення…). Проверьте, что это выписка банка.", "neg");
+  const H = arr[hi].map(c => nrm(c)), map = {};
+  for (const [k, keys] of Object.entries(B_COLS)) map[k] = guessCol(H, keys);
+  bankImp = {file: file.name, head: arr[hi].map(c => String(c ?? "")), raw: arr.slice(hi + 1).filter(r => r && r.some(c => c !== null && c !== "")), map, rows: []};
+  if (!ui.bankAcc) ui.bankAcc = sortedBy("accounts").find(a => a.kind === "bank")?.id || "";
+  bankParse(); ui.view = "bank"; render();
+}
+function hash(s){ let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
+function bankParse(){
+  const {raw, map} = bankImp, g = (r, k) => map[k] >= 0 ? r[map[k]] : null;
+  const rules = byId("settings", "bankRules")?.rules || {};
+  const rows = [];
+  raw.forEach((r, i) => {
+    const date = cellDate(g(r, "date")); if (!date) return;
+    let amt;
+    if (map.debit >= 0 || map.credit >= 0) { const dv = Math.abs(num(g(r, "debit"))), cv = Math.abs(num(g(r, "credit"))); amt = cv ? cv : -dv; }
+    else { amt = num(g(r, "amount")); const tp = nrm(g(r, "type")); if (tp.startsWith("вих") || tp.includes("дебет") || tp.includes("списан")) amt = -Math.abs(amt); else if (tp.startsWith("вх") || tp.includes("кредит") || tp.includes("зарах")) amt = Math.abs(amt); }
+    if (!amt) return;
+    const party = String(g(r, "party") ?? "").trim(), code = String(g(r, "code") ?? "").trim(), purpose = String(g(r, "purpose") ?? "").trim();
+    const id = "bk_" + hash([date, amt.toFixed(2), party, purpose, i > -1 ? "" : i].join("|")) + "_" + date.replace(/-/g, "");
+    rows.push(Object.assign({i, id, date, amt, party, code, purpose, exists: !!byId("docs", id)}, bankGuess(amt, party, code, purpose, rules)));
+  });
+  bankImp.rows = rows;
+}
+function bankGuess(amt, party, code, purpose, rules){
+  const text = nrm(party + " " + purpose);
+  const sup = S.suppliers.find(s => (s.edrpou && code && String(s.edrpou) === code) || (s.name && nrm(party).includes(nrm(s.name))));
+  const rk = code || nrm(party);
+  if (rules[rk]) return Object.assign({}, rules[rk]);
+  if (amt > 0) return {kind: "in", source: /еквайр|відшкод|checkbox|термінал|pos/.test(text) ? "Выручка безнал (эквайринг)" : /інкас|готівк/.test(text) ? "Выручка наличными" : "Прочее поступление"};
+  if (sup) return {kind: "pay", supplier: sup.id};
+  for (const a of S.articles) { const keys = String(a.keys || "").split(",").map(x => nrm(x)).filter(Boolean); if (keys.some(k => text.includes(k))) return {kind: "exp", article: a.id}; }
+  const A = n => S.articles.find(a => a.name === n)?.id || "";
+  if (/оренд/.test(text)) return {kind: "exp", article: A("Аренда")};
+  if (/електро|комунал|водопост|газ|теплопост|вивіз сміття/.test(text)) return {kind: "exp", article: A("Коммунальные услуги")};
+  if (/заробітн|зарплат|аванс/.test(text)) return {kind: "exp", article: A("Выплата зарплаты")};
+  if (/податок|єсв|єдиний внесок|єп |єдиного податку|казнач|гук /.test(text)) return {kind: "exp", article: A("Налоги (ЕН, ЕСВ)")};
+  if (/коміс|обслуговув|еквайр|розрахунково-касов/.test(text)) return {kind: "exp", article: A("Банк и эквайринг")};
+  if (/пальн|бензин|дизел|азс|окко|wog|socar/.test(text)) return {kind: "exp", article: A("Транспорт и топливо")};
+  if (/інтернет|зв.язок|київстар|vodafone|lifecell|мобільн/.test(text)) return {kind: "exp", article: A("Связь и интернет")};
+  if (/власн|переказ на картк|фоп .* власн/.test(text)) return {kind: "skip"};
+  return {kind: "exp", article: A("Прочие расходы")};
+}
+function vBank(){
+  const head = top("Загрузка банковской выписки", "Выписка Excel или CSV из банка → расходы, оплаты поставщикам и поступления");
+  const accSel = `<label>Расчётный счёт<select data-e-in="bank-acc">${accOpts(ui.bankAcc, "— выберите счёт —")}</select></label>`;
+  if (!bankImp) return head + `<div class="filters">${accSel}${!S.accounts.length ? `<button class="btn sm" data-go="accounts">Добавить счёт</button>` : ""}</div>
+    <div class="card"><label class="empty" id="bankzone" style="display:block;cursor:pointer;border:2px dashed var(--line);border-radius:var(--r);margin:14px">
+    <b>Перетащите сюда файл выписки или нажмите, чтобы выбрать</b>Приват24, Монобанк, ПУМБ, Ощадбанк и др.: выгрузка «Виписка» в Excel/CSV. Колонки определяются автоматически.
+    <input type="file" id="bankfile" accept=".xlsx,.xls,.csv" hidden></label>
+    <div class="pad hint" style="padding-top:0">Расходы раскладываются по статьям по словам в назначении платежа (их можно задать в справочнике «Статьи расходов»). Если поменяете статью у контрагента — программа запомнит это для следующих выписок. Повторная загрузка тех же операций не создаёт дублей.</div></div>`;
+  const R = bankImp.rows, kinds = [["exp", "Расход"], ["pay", "Оплата поставщику"], ["in", "Поступление"], ["skip", "Пропустить"]];
+  const colSel = k => `<select data-bmap="${k}"><option value="-1">—</option>${bankImp.head.map((h, i) => `<option value="${i}" ${bankImp.map[k] === i ? "selected" : ""}>${esc(h || "колонка " + (i + 1))}</option>`).join("")}</select>`;
+  const inc = R.filter(r => r.amt > 0 && r.kind !== "skip").reduce((t, r) => t + r.amt, 0), out = R.filter(r => r.amt < 0 && r.kind !== "skip").reduce((t, r) => t - r.amt, 0);
+  const fresh = R.filter(r => !r.exists && r.kind !== "skip").length;
+  return head + `<div class="filters"><button class="btn" data-e="bank-reset">Другой файл</button><span class="hint">${esc(bankImp.file)} · операций: ${R.length}</span> ${accSel}</div>
+  <details class="card pad" style="margin-bottom:12px"><summary style="cursor:pointer"><b>Колонки выписки</b> <span class="hint">— если что-то определилось неверно</span></summary>
+    <div class="fgrid" style="margin-top:10px">${[["date","Дата"],["amount","Сумма (одна колонка)"],["type","Тип (Вхідна/Вихідна)"],["debit","Дебет / списание"],["credit","Кредит / поступление"],["party","Контрагент"],["code","ЄДРПОУ контрагента"],["purpose","Назначение платежа"]].map(([k, n]) => `<label>${n}${colSel(k)}</label>`).join("")}</div></details>
+  <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="card kpi"><div class="l">Поступления</div><div class="v pos">${money0(inc)} ₴</div></div><div class="card kpi"><div class="l">Списания</div><div class="v">${money0(out)} ₴</div></div><div class="card kpi"><div class="l">Будет создано документов</div><div class="v">${fresh}</div><div class="s">${R.filter(r => r.exists).length} уже загружены ранее</div></div></div>
+  <div class="tbl"><table class="lines"><thead><tr><th>Дата</th><th>Контрагент / назначение</th><th class="n">Сумма</th><th>Что это</th><th>Статья / поставщик</th><th>Точка</th></tr></thead><tbody>
+  ${R.map((r, i) => `<tr ${r.exists ? `style="opacity:.55"` : ""}><td>${dfmt(r.date)}</td><td style="max-width:380px"><b>${esc(r.party || "—")}</b>${r.code ? ` <span class="muted">${esc(r.code)}</span>` : ""}<div class="hint" style="white-space:normal">${esc(r.purpose.slice(0, 160))}</div></td>
+    <td class="n ${r.amt > 0 ? "pos" : ""}"><b>${r.amt > 0 ? "+" : ""}${money(r.amt)}</b></td>
+    <td>${r.exists ? `<span class="pill draft">уже есть</span>` : `<select data-bk="${i}:kind">${opt(kinds.filter(k => r.amt > 0 ? ["in","skip"].includes(k[0]) : k[0] !== "in"), r.kind)}</select>`}</td>
+    <td>${r.exists ? "" : r.kind === "exp" ? `<select data-bk="${i}:article">${artOpts(r.article, "— статья —")}</select>` : r.kind === "pay" ? `<select data-bk="${i}:supplier">${opt(sortedBy("suppliers").map(s => [s.id, s.name]), r.supplier, "— поставщик —")}</select>` : r.kind === "in" ? `<select data-bk="${i}:source">${opt(MONEY_SRC.map(x => [x, x]), r.source)}</select>` : ""}</td>
+    <td>${!r.exists && r.kind === "exp" ? `<select data-bk="${i}:store">${storeOpts(r.store, "Общий")}</select>` : ""}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="actions" style="margin-top:14px;justify-content:flex-end">${!ui.bankAcc ? `<span class="warn hint">Выберите расчётный счёт выписки.</span>` : ""}<button class="btn pri" data-e="bank-go" ${canWrite && fresh && ui.bankAcc ? "" : "disabled"}>Загрузить ${fresh} операций</button></div>`;
+}
+let bankBusy = false;
+async function bankCommit(){
+  if (bankBusy || !bankImp) return; bankBusy = true;
+  const acc = ui.bankAcc, org = byId("accounts", acc)?.org || S.orgs[0]?.id || "";
+  const todo = bankImp.rows.filter(r => !r.exists && r.kind !== "skip");
+  const rules = Object.assign({}, byId("settings", "bankRules")?.rules || {});
+  try {
+    const docs = todo.map(r => {
+      const base = {id: r.id, date: r.date, posted: true, created: Date.now(), updated: Date.now(), bank: true, amount: r2(Math.abs(r.amt)), total: r2(Math.abs(r.amt)), note: r.purpose.slice(0, 300), counterparty: r.party};
+      const rk = r.code || nrm(r.party); if (rk) rules[rk] = r.kind === "exp" ? {kind: "exp", article: r.article} : r.kind === "pay" ? {kind: "pay", supplier: r.supplier} : r.kind === "in" ? {kind: "in", source: r.source} : {kind: "skip"};
+      if (r.kind === "exp") return Object.assign(base, {type: "expense", article: r.article || S.articles.find(a => a.name === "Прочие расходы")?.id || "", store: r.store || "", org, account: acc});
+      if (r.kind === "pay") return Object.assign(base, {type: "payment", supplier: r.supplier, method: "Банк", account: acc});
+      return Object.assign(base, {type: "money", op: "in", source: r.source, accTo: acc});
+    }).filter(d => d.type !== "payment" || d.supplier);
+    const cnt = {}; for (const d of docs) { let max = cnt[d.type]; if (max === undefined) { max = 0; for (const x of S.docs) if (x.type === d.type) { const n = parseInt(String(x.num || "").split("-")[1], 10); if (n > max) max = n; } } cnt[d.type] = max + 1; d.num = TYPES[d.type].pre + "-" + String(max + 1).padStart(5, "0"); }
+    for (let i = 0; i < docs.length; i += 6) { await Promise.all(docs.slice(i, i + 6).map(d => put("docs", d))); toast(`Загружаем выписку… ${Math.min(i + 6, docs.length)} из ${docs.length}`); }
+    await put("settings", {id: "bankRules", rules, updated: Date.now()});
+    toast(`Выписка загружена: ${docs.length} операций`); bankImp = null; ui.view = "r-money"; render();
+  } catch (e) { toast(writeErr(e), "neg"); }
+  finally { bankBusy = false; }
+}
+
+/* ---------- events for the module ---------- */
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-e]"); if (!a) return;
+  const k = a.dataset.e; if (a.tagName === "A") e.preventDefault();
+  if (k === "ref-new") openRef2(a.dataset.col, {id: uid(a.dataset.col.slice(0, 3)), _new: true});
+  else if (k === "ref-open") { const o = byId(a.dataset.col, a.dataset.id); if (o) openRef2(a.dataset.col, o); }
+  else if (k === "ref2-save") saveRef2();
+  else if (k === "ref2-del") { if (!edit._arm) { edit._arm = true; a.classList.add("arm"); a.textContent = "Точно удалить?"; return; } del(edit._kind.slice(5), edit.id).then(() => { toast("Удалено"); closeModal(); }, err => toast(writeErr(err), "neg")); }
+  else if (k === "own-add") { const used = new Set(S.owners.map(o => o.store)); const st = retail().find(s => !used.has(s.id)) || retail()[0]; put("owners", {id: uid("ow"), store: st?.id || "", org: S.orgs[0]?.id || "", from: today().slice(0, 8) + "01"}).catch(err => toast(writeErr(err), "neg")); }
+  else if (k === "own-del") del("owners", a.dataset.id).catch(err => toast(writeErr(err), "neg"));
+  else if (k === "erp-save") erpSave(a.dataset.post === "1");
+  else if (k === "pr-fill") fillPayroll();
+  else if (k === "pr-rm") { edit.lines.splice(+a.dataset.i, 1); payrollRender(); }
+  else if (k === "sh-toggle") { const d = shDraft.days[a.dataset.day] = shDraft.days[a.dataset.day] || []; const i = d.indexOf(a.dataset.emp); if (i >= 0) d.splice(i, 1); else d.push(a.dataset.emp); if (!d.length) delete shDraft.days[a.dataset.day]; shDraft.dirty = true; render(); }
+  else if (k === "sh-save") { const [m, st] = [ui.shMonth, ui.shStore]; put("shifts", {id: m + "_" + st, month: m, store: st, days: shDraft.days, updated: Date.now()}).then(() => { shDraft.dirty = false; toast("График сохранён"); bump(); }, err => toast(writeErr(err), "neg")); }
+  else if (k === "sh-copy") { const d = new Date(ui.shMonth + "-15T12:00:00"); d.setMonth(d.getMonth() - 1); const pm = iso(d).slice(0, 7), src = shiftDoc(pm, ui.shStore);
+    if (!src) return toast("За " + monthName(pm) + " графика по этой точке нет.", "neg");
+    // copy by weekday pattern position: same day number
+    const dim = daysIn(ui.shMonth); shDraft.days = {}; for (const [day, ids] of Object.entries(src.days || {})) if (+day <= dim) shDraft.days[day] = ids.slice(); shDraft.dirty = true; render(); toast("Скопировано с " + monthName(pm) + ". Проверьте и сохраните."); }
+  else if (k === "stock-reset") { Object.assign(ui, {stockStore: "all", stockGroup: "all", stockSupp: "all", stockSearch: "", stockQty: "nonzero", stockQmin: "", stockQmax: ""}); render(); }
+  else if (k === "mn-acc") { ui.mnAcc = a.dataset.id; render(); }
+  else if (k === "bank-reset") { bankImp = null; render(); }
+  else if (k === "bank-go") bankCommit();
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.pr && edit && edit.type === "payroll") { const [i, k] = t.dataset.pr.split(":"); edit.lines[+i][k] = t.value; const l = payLine(edit.lines[+i]);
+    const a = document.getElementById("pra" + i), p = document.getElementById("prp" + i); if (a) a.innerHTML = "<b>" + money(l.accrued) + "</b>"; if (p) p.textContent = money(l.toPay);
+    const LL = edit.lines.map(payLine), ta = document.getElementById("prta"), tp = document.getElementById("prtp"); if (ta) ta.textContent = money(LL.reduce((t, x) => t + x.accrued, 0)); if (tp) tp.textContent = money(LL.reduce((t, x) => t + x.toPay, 0)); }
+});
+document.addEventListener("change", e => {
+  const t = e.target, k = t.dataset.eIn;
+  if (t.dataset.h && edit && ERP_TYPES[edit.type] && t.tagName === "SELECT" && t.dataset.h === "op") { edit.op = t.value; erpRender(); }
+  if (t.dataset.h === "store" && edit && edit.type === "expense" && t.value) { const o = orgOfStore(t.value, edit.date); if (o) { edit.org = o; erpRender(); } }
+  if (k === "pr-month" && edit) { edit.month = t.value || edit.month; payrollRender(); }
+  else if (k === "sh-month") { if (shDraft?.dirty) toast("Несохранённые изменения графика сброшены.", "neg"); ui.shMonth = t.value || ui.shMonth; shDraft = null; render(); }
+  else if (k === "sh-store") { if (shDraft?.dirty) toast("Несохранённые изменения графика сброшены.", "neg"); ui.shStore = t.value; shDraft = null; render(); }
+  else if (k === "sh-add" && t.value) { shDraft.extra.push(t.value); render(); }
+  else if (k === "pl-org") { ui.plOrg = t.value; render(); }
+  else if (k === "pl-spread") { ui.plSpread = t.checked; render(); }
+  else if (k === "bank-acc") { ui.bankAcc = t.value; render(); }
+  else if (t.dataset.own) { const [id, f] = t.dataset.own.split(":"); const o = byId("owners", id); if (o) put("owners", Object.assign({}, o, {[f]: t.value})).catch(err => toast(writeErr(err), "neg")); }
+  else if (t.dataset.bmap && bankImp) { bankImp.map[t.dataset.bmap] = +t.value; bankParse(); render(); }
+  else if (t.dataset.bk && bankImp) { const [i, f] = t.dataset.bk.split(":"); const r = bankImp.rows[+i]; r[f] = t.value;
+    if (f === "kind") { if (t.value === "exp" && !r.article) r.article = S.articles.find(a => a.name === "Прочие расходы")?.id || ""; if (t.value === "in" && !r.source) r.source = MONEY_SRC[5]; }
+    // same counterparty → same choice for the other rows of this file
+    if (["article", "supplier", "kind", "source"].includes(f)) for (const x of bankImp.rows) if (x !== r && !x.exists && (x.code ? x.code === r.code : x.party === r.party) && Math.sign(x.amt) === Math.sign(r.amt)) { x.kind = r.kind; x[f] = r[f]; }
+    render(); }
+  else if (t.id === "bankfile" && t.files.length) { readBank(t.files[0]); t.value = ""; }
+});
+document.addEventListener("dragover", e => { const z = e.target.closest && e.target.closest("#bankzone"); if (z) { e.preventDefault(); z.style.borderColor = "var(--accent)"; } });
+document.addEventListener("drop", e => { const z = e.target.closest && e.target.closest("#bankzone"); if (!z) return; e.preventDefault(); z.style.borderColor = ""; if (e.dataTransfer.files.length) readBank(e.dataTransfer.files[0]); });
+
+
+/* ---------- receipt from a photo of the supplier's waybill (Claude reads the picture) ---------- */
+let smp = null, photoCtl = null, photoBusy = 0;
+const pTok = s => srchNorm(s).split(" ").filter(w => w.length > 1);
+const photoAliases = () => byId("settings", "photoAliases")?.map || {};
+const aliasKey = (supp, name) => (supp || "") + "|" + srchNorm(name);
+function photoMatch(name, code, bar, supp){
+  const al = photoAliases(), a = al[aliasKey(supp, name)] || al[aliasKey("", name)];
+  if (a && itemOf(a)) return {id: a, fuzzy: false};
+  const n = srchNorm(name);
+  const ex = (bar && S.items.find(i => i.barcode && String(i.barcode) === String(bar))) || S.items.find(i => srchNorm(i.name) === n);
+  if (ex) return {id: ex.id, fuzzy: false};
+  const T = pTok(name); if (T.length < 2) return null;
+  let best = null, bs = 0;
+  for (const i of S.items) { const U = pTok(i.name); if (!U.length) continue;
+    const hit = T.filter(w => U.some(u => u === w || (w.length > 3 && u.length > 3 && (u.startsWith(w.slice(0, 4)) || w.startsWith(u.slice(0, 4)))))).length;
+    let sc = hit / Math.max(T.length, U.length); if (supp && i.supplier === supp) sc += 0.05; if (sc > bs) { bs = sc; best = i; } }
+  return bs >= 0.6 ? {id: best.id, fuzzy: true} : null;
+}
+const photoPrompt = () => `На фото — товарная накладная поставщика (видаткова накладна, ТТН, рахунок) для розничной сети продуктов в Украине. Если фото несколько — это страницы ОДНОЙ накладной по порядку: объедини строки и не дублируй те, что видны на двух фото.
+Перепиши таблицу товаров точно как на бумаге. Не придумывай строк и чисел: неразборчивое поле оставь пустым ("" или null).
+Верни ТОЛЬКО JSON:
+{"supplier":"поставщик (продавець/постачальник, НЕ покупатель)","edrpou":"ЄДРПОУ/ІПН поставщика или \\"\\"","number":"номер накладной","date":"YYYY-MM-DD","rows":[{"name":"наименование как в документе","code":"код/артикул или \\"\\"","barcode":"штрихкод или \\"\\"","unit":"кг|шт|уп|л","qty":12.5,"price":105.4,"sum":1317.5,"group":"группа"}],"total":1317.5}
+Правила: числа без пробелов, десятичная точка; qty — количество в единице из документа; если количество дробное (вес), unit = "кг"; price и sum — из колонок «Ціна» и «Сума» этой строки (если есть без ПДВ и з ПДВ — бери з ПДВ); строки «Разом», «Всього», «ПДВ», «До сплати» в rows не включай; total — итог к оплате з ПДВ.
+group — выбери самую подходящую из списка групп магазина: ${JSON.stringify(groups().filter(g => g !== "Без группы"))}; если ни одна не подходит — "".`;
+function photoBusyView(){
+  openModal(`<div class="sheet narrow" role="dialog" aria-modal="true" aria-label="Распознавание накладной"><div class="sh-b" style="text-align:center;padding:36px 18px">
+    <div style="font-family:var(--f-display);font-size:17px">Распознаю накладную${photoBusy > 1 ? ` (${photoBusy} фото)` : ""}…</div>
+    <div class="hint">Обычно 20–60 секунд. При первом запуске Claude спросит разрешение.</div>
+    <div><button class="btn" data-act="photo-stop">Остановить</button></div></div></div>`);
+}
+async function readPhotos(files){
+  if (!canWrite) return toast("У вас доступ только для просмотра.", "neg");
+  if (!smp) return toast("Распознавание фото работает, когда программа открыта в Claude (браузер или приложение).", "neg");
+  const lim = await smp.limits().catch(() => null);
+  if (!lim || !lim.images) return toast("В этом окне нельзя отправить фото на распознавание. Откройте программу в браузере или приложении Claude.", "neg");
+  if (files.some(f => /\.heic$/i.test(f.name) && !/^image\/(jpe?g|png|webp|gif)$/.test(f.type))) return toast("Формат HEIC не поддерживается — сохраните фото как JPG.", "neg");
+  files = files.slice(0, lim.images.maxCount || 5);
+  const keep = edit && edit._kind === "doc" && edit.type === "receipt" && !edit.posted ? edit : null;
+  photoBusy = files.length; photoCtl = new AbortController(); photoBusyView();
+  let r;
+  try { r = await smp.json(photoPrompt(), {images: files, signal: photoCtl.signal, cache: false}); if (!r || !Array.isArray(r.rows)) throw {code: "invalid_json"}; }
+  catch (e) {
+    photoBusy = 0; photoCtl = null; if (keep) { edit = keep; renderDoc(); } else closeModal();
+    const c = e && e.code; if (c === "cancelled") return;
+    return toast(c === "not_granted" ? "Распознавание не разрешено. Разрешите программе обращаться к Claude (меню артефакта → Разрешения)." : c === "rate_limited" ? "Слишком много запросов — попробуйте через пару минут." : c === "image_rejected" ? "Фото не подошло (формат или размер). Нужны JPG или PNG." : c === "invalid_json" || c === "empty_completion" ? "Не удалось разобрать накладную. Сфотографируйте таблицу ровнее и ближе." : "Ошибка распознавания: " + ((e && e.message) || c || e), "neg");
+  }
+  photoBusy = 0; photoCtl = null;
+  // document: fill the open draft receipt, or start a new one
+  let d = keep;
+  if (!d) { newDoc("receipt"); d = edit; }
+  edit = d;
+  const supName = String(r.supplier || "").trim(), ed = String(r.edrpou || "").replace(/\D/g, "");
+  const sup = (ed && S.suppliers.find(s => String(s.edrpou || "").replace(/\D/g, "") === ed)) || (supName && S.suppliers.find(s => { const a = pTok(s.name).filter(w => w.length > 2 && !["тов","фоп","пп","тзов"].includes(w)), b = pTok(supName); return a.length && a.every(w => b.includes(w)); })) || null;
+  if (sup) { d.supplier = sup.id; delete d._newSupp; }
+  else if (supName) { d.supplier = "__new"; d._newSupp = {name: supName, edrpou: ed}; }
+  if (r.number) d.extNum = String(r.number).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(r.date || "") && r.date <= today()) d.date = r.date;
+  d.lines = d.lines.filter(l => l.item || l._src);
+  const added = [];
+  for (const x of r.rows) {
+    const nm = String(x && x.name || "").trim(); if (!nm || /^(разом|всього|итого|усього|пдв|до сплати)/i.test(nm)) continue;
+    let qty = num(x.qty), price = num(x.price), sum = num(x.sum); if (!qty && !sum) continue;
+    if (!price && qty && sum) price = r2(sum / qty); if (!sum) sum = r2(qty * price);
+    let unit = String(x.unit || "шт").toLowerCase().replace(".", ""); if (!["кг","шт","уп","л"].includes(unit)) unit = "шт"; if (unit === "шт" && isFrac(qty)) unit = "кг";
+    const m = photoMatch(nm, String(x.code || "").trim(), String(x.barcode || "").trim(), sup?.id);
+    const dup = added.some(o => srchNorm(o._src) === srchNorm(nm) && o.qty === qty && o.price === price);
+    const g = String(x.group || "").trim();
+    const l = {item: m ? m.id : "", qty, price, _src: nm, _unit: unit, _group: groups().includes(g) ? g : "", _bar: String(x.barcode || "").trim(), _fuzzy: !!(m && m.fuzzy), _dup: dup};
+    added.push(l); d.lines.push(l);
+  }
+  if (!added.length) { renderDoc(); return toast("На фото не нашёл строк с товарами. Сфотографируйте таблицу ровнее и ближе.", "neg"); }
+  d.lines.push({item: "", qty: "", price: ""});
+  d._photo = {files: files.length, total: num(r.total), supName};
+  if (!d.note) d.note = "С фото накладной" + (d.extNum ? " № " + d.extNum : "");
+  renderDoc();
+  const miss = added.filter(l => !l.item).length;
+  toast(`Распознано строк: ${added.length}` + (miss ? ` · не найдено в номенклатуре: ${miss}` : "") + ". Проверьте и проведите.");
+}
+function newItemFromLine(l, supp){
+  const mk = l._group ? markups()[gkey(l._group)] : undefined;
+  const it = {id: uid("i"), name: l._src, group: l._group || "Без группы", unit: l._unit || "шт", buy: r2(num(l.price)), price: mk !== undefined && mk !== null && mk !== "" ? r2(num(l.price) * (1 + num(mk) / 100)) : 0, barcode: l._bar || "", cbCode: "", supplier: supp && supp !== "__new" ? supp : ""};
+  return it;
+}
+async function createMissing(idx){
+  const d = edit; if (!d) return;
+  const todo = (idx === undefined ? d.lines.map((l, i) => i) : [idx]).filter(i => d.lines[i] && d.lines[i]._src && !d.lines[i].item);
+  try {
+    const made = {};
+    for (const i of todo) { const l = d.lines[i], key = srchNorm(l._src) + "|" + l._unit;
+      let it = made[key] || S.items.find(x => srchNorm(x.name) === srchNorm(l._src) && x.unit === l._unit);
+      if (!it) { it = newItemFromLine(l, d.supplier); await put("items", it); if (!byId("items", it.id)) S.items.push(it); made[key] = it; }
+      l.item = it.id; l._fuzzy = false; }
+    edit = d; renderDoc();
+    if (todo.length) toast(`Добавлено в номенклатуру: ${Object.keys(made).length}. Розничную цену и группу можно поправить в «Номенклатуре».`);
+  } catch (e) { toast(writeErr(e), "neg"); }
+}
+async function rememberAliases(d){
+  const rows = (d.lines || []).filter(l => l._src && l.item); if (!rows.length) return;
+  const cur = byId("settings", "photoAliases"), map = Object.assign({}, cur?.map || {}); let ch = false;
+  for (const l of rows) { const k = aliasKey(d.supplier, l._src); if (map[k] !== l.item && srchNorm(itemOf(l.item)?.name) !== srchNorm(l._src)) { map[k] = l.item; ch = true; } }
+  if (ch) try { await put("settings", {id: "photoAliases", map, updated: Date.now()}); } catch (_) {}
+}
+function fracBanner(d){
+  const ids = [...new Set((d.lines || []).filter(l => l.item && !fracAllowed(itemOf(l.item)) && l.qty !== "" && isFrac(l.qty)).map(l => l.item))];
+  if (!ids.length || !canWrite) return "";
+  return `<div class="banner" style="margin:0;background:var(--neg-weak)"><span>Дробное количество у товаров в «шт»: ${ids.slice(0, 4).map(id => esc(itemOf(id)?.name)).join(", ")}${ids.length > 4 ? "…" : ""}. Если это весовой товар — переведите его в кг.</span><button class="btn sm" data-act="frac-kg" data-ids="${ids.join(",")}">Перевести в кг (${ids.length})</button></div>`;
+}
+async function fracToKg(ids){ try { for (const id of ids) { const it = itemOf(id); if (!it) continue; const o = Object.assign({}, it, {unit: "кг"}); await put("items", o); it.unit = "кг"; } if (edit) renderDoc(); toast("Единица изменена на кг. Теперь документ можно провести."); } catch (e) { toast(writeErr(e), "neg"); } }
+function photoBanner(d){
+  const fb = fracBanner(d);
+  if (!d._photo && !d.lines.some(l => l._src)) return fb;
+  const miss = d.lines.filter(l => l._src && !l.item).length, fz = d.lines.filter(l => l._src && l.item && l._fuzzy).length, dup = d.lines.filter(l => l._dup).length;
+  const tot = r2((d.lines || []).filter(l => l.item || l._src).reduce((t, l) => t + num(l.qty) * num(l.price), 0)), pt = d._photo?.total || 0;
+  let h = `<div class="banner" style="margin:0"><span>Заполнено с фото — <b>сверьте количество, цены и суммы с бумажной накладной</b>.${fz ? ` Отмечено ≈ — товар подобран по похожему названию (${fz}), проверьте.` : ""}${dup ? ` Повторы строк (${dup}) отмечены красным — удалите лишние.` : ""}</span></div>`;
+  if (pt && Math.abs(pt - tot) > 0.05) h += `<div class="banner" style="margin:0;background:var(--neg-weak)"><span>Итог в накладной: <b>${money(pt)} ₴</b>, в документе: <b>${money(tot)} ₴</b> — разница ${money(r2(pt - tot))} ₴.</span></div>`;
+  if (miss) h += `<div class="banner" style="margin:0"><span>Не найдено в номенклатуре: <b>${miss}</b>. Выберите товар в строке поиском или добавьте новые.</span><button class="btn sm pri" data-act="photo-mkall" ${canWrite ? "" : "disabled"}>Добавить ${miss} в номенклатуру</button></div>`;
+  return h + fb;
+}
+
+/* ---------- item search box in document lines ---------- */
+const ISR = {list: null, idx: 0, row: -1, hits: []};
+const srchNorm = v => String(v ?? "").toLowerCase().replace(/ё/g, "е").replace(/[«»"'`’.,()*]/g, " ").replace(/\s+/g, " ").trim();
+function itemSearch(q){
+  const t = srchNorm(q); if (!t) return [];
+  const words = t.split(" ");
+  const out = [];
+  for (const it of S.items) {
+    const name = srchNorm(it.name), code = String(it.cbCode || ""), bar = String(it.barcode || "");
+    if (code === t || (bar && bar === t)) { out.push([0, it]); continue; }
+    const hay = name + " " + srchNorm(it.group) + " " + code + " " + bar;
+    if (!words.every(w => hay.includes(w))) continue;
+    out.push([name.startsWith(t) ? 1 : (" " + name).includes(" " + words[0]) ? 2 : 3, it]);
+  }
+  return out.sort((a, b) => a[0] - b[0] || a[1].name.localeCompare(b[1].name, "ru")).slice(0, 40).map(x => x[1]);
+}
+function isrClose(){ if (ISR.list) { ISR.list.remove(); ISR.list = null; } ISR.row = -1; }
+function isrShow(inp){
+  const i = +inp.dataset.isr, hits = itemSearch(inp.value);
+  ISR.hits = hits; ISR.row = i; ISR.idx = 0;
+  if (!ISR.list) { ISR.list = document.createElement("div"); ISR.list.className = "isr-list"; ISR.list.setAttribute("role", "listbox"); document.body.appendChild(ISR.list); }
+  const r = inp.getBoundingClientRect(), below = window.innerHeight - r.bottom;
+  Object.assign(ISR.list.style, {left: Math.max(8, r.left) + "px", width: Math.max(r.width, Math.min(520, window.innerWidth - 16)) + "px"});
+  if (below > 260 || below > r.top) { ISR.list.style.top = (r.bottom + 4) + "px"; ISR.list.style.bottom = ""; ISR.list.style.maxHeight = Math.max(160, below - 16) + "px"; }
+  else { ISR.list.style.top = ""; ISR.list.style.bottom = (window.innerHeight - r.top + 4) + "px"; ISR.list.style.maxHeight = Math.max(160, r.top - 16) + "px"; }
+  const src = edit && edit.type !== "receipt" ? edit.from : null;
+  ISR.list.innerHTML = hits.length ? hits.map((it, k) => {
+    const st = src ? stockOf(src, it.id) : null;
+    return `<div class="isr-opt ${k === 0 ? "on" : ""}" role="option" data-isr-pick="${it.id}" data-k="${k}"><div><b>${esc(it.name)}</b><span class="hint"> · ${esc(it.group || "")}${it.cbCode ? " · код " + esc(it.cbCode) : ""}</span></div>
+      <div class="isr-r"><span class="num">${money(edit?.type === "receipt" ? it.buy : it.price)} ₴</span>${st !== null ? `<span class="hint ${st <= 0 ? "neg" : ""}">ост. ${qtyf(st)} ${esc(it.unit || "")}</span>` : ""}</div></div>`; }).join("")
+    : `<div class="isr-empty">${inp.value.trim() ? "Ничего не найдено. Проверьте написание или добавьте товар в «Номенклатуру»." : "Начните вводить название, код Checkbox или отсканируйте штрихкод"}</div>`;
+}
+function isrMove(d){ if (!ISR.list || !ISR.hits.length) return; ISR.idx = (ISR.idx + d + ISR.hits.length) % ISR.hits.length;
+  ISR.list.querySelectorAll(".isr-opt").forEach((el, k) => el.classList.toggle("on", k === ISR.idx)); ISR.list.querySelector(".isr-opt.on")?.scrollIntoView({block: "nearest"}); }
+function isrPick(i, id){
+  isrClose();
+  const l = edit && edit.lines && edit.lines[i]; if (!l) return;
+  l.item = id; const it = itemOf(id);
+  if (l._src) { l._fuzzy = false; l._dup = false; }
+  if (it) { if (edit.type === "receipt" && !l._src) l.price = it.buy; if (edit.type === "sale") { l.price = it.price; delete l.sum; } if (edit.type === "inventory" && (l.fact === undefined || l.fact === "")) l.fact = r2(stockOf(edit.from, it.id)); }
+  if (edit._arm) edit._arm = false;
+  if (i === edit.lines.length - 1) edit.lines.push({item: "", qty: "", price: ""});
+  renderDoc();
+  const q = document.querySelector(`[data-l="${i}:${edit.type === "inventory" ? "fact" : "qty"}"]`); q?.focus(); q?.select?.();
+}
+document.addEventListener("input", e => { if (e.target.dataset && e.target.dataset.isr !== undefined) isrShow(e.target); });
+document.addEventListener("focusin", e => { if (e.target.dataset && e.target.dataset.isr !== undefined) { e.target.select(); isrShow(e.target); } });
+document.addEventListener("focusout", e => { if (e.target.dataset && e.target.dataset.isr !== undefined) setTimeout(() => { if (!document.activeElement || document.activeElement.dataset?.isr === undefined) { const i = +e.target.dataset.isr, l = edit?.lines?.[i]; if (l) e.target.value = itemOf(l.item)?.name || ""; isrClose(); } }, 150); });
+document.addEventListener("keydown", e => {
+  const t = e.target; if (!t.dataset || t.dataset.isr === undefined) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); if (!ISR.list) isrShow(t); else isrMove(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); isrMove(-1); }
+  else if (e.key === "Enter") { e.preventDefault(); if (ISR.list && ISR.hits.length) isrPick(+t.dataset.isr, ISR.hits[ISR.idx].id); }
+  else if (e.key === "Escape") { if (ISR.list) { e.stopPropagation(); e.preventDefault(); isrClose(); } }
+}, true);
+document.addEventListener("mousedown", e => { const o = e.target.closest && e.target.closest("[data-isr-pick]"); if (o) { e.preventDefault(); isrPick(ISR.row, o.dataset.isrPick); } });
+document.addEventListener("scroll", e => { if (ISR.list && !(e.target.closest && e.target.closest(".isr-list"))) isrClose(); }, true);
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-go],[data-act],[data-new],[data-open],[data-item],[data-store],[data-supp],[data-period],[data-smode],[data-sby],[data-abc],[data-rm]");
+  if (!a) { if (e.target.id === "modal") closeModal(); return; }
+  if (a.tagName === "A") e.preventDefault();
+  const ds = a.dataset;
+  if (ds.go) { ui.view = ds.go; try { history.replaceState(null, "", "#" + ds.go.replace(":", "-")); } catch (_) {} render(); window.scrollTo(0, 0); return; }
+  if (ds.new) { if (!S.stores.length) { toast("Сначала добавьте магазины и склад.", "neg"); return; } newDoc(ds.new); return; }
+  if (ds.open) { const d = byId("docs", ds.open); if (d) openDoc(d); return; }
+  if (ds.item) { const it = byId("items", ds.item); if (it) refForm("item", it); return; }
+  if (ds.store) { const s = byId("stores", ds.store); if (s) refForm("store", s); return; }
+  if (ds.supp) { const s = byId("suppliers", ds.supp); if (s) refForm("supp", s); return; }
+  if (ds.period) { [ui.from, ui.to] = ds.period.split("|"); render(); return; }
+  if (ds.smode) { ui.stockMode = ds.smode; render(); return; }
+  if (ds.sby) { ui.salesBy = ds.sby; render(); return; }
+  if (ds.abc) { ui.abcBy = ds.abc; render(); return; }
+  if (ds.rm !== undefined && edit) { edit.lines.splice(+ds.rm, 1); renderDoc(); return; }
+  const act = ds.act;
+  if (act === "close") closeModal();
+  else if (act === "csv") exportCsv();
+  else if (act === "backup") saveFile("uchet-tt-" + today() + ".json", JSON.stringify(S, null, 1));
+  else if (act === "item-new") refForm("item", {id: uid("i"), _new: true, unit: "шт", group: ui.itemGroup !== "all" ? ui.itemGroup : ""});
+  else if (act === "store-new") refForm("store", {id: uid("st"), _new: true, kind: "store"});
+  else if (act === "supp-new") refForm("supp", {id: uid("s"), _new: true});
+  else if (act === "ref-save") saveRef();
+  else if (act === "ref-del") {
+    if (!edit._arm) { edit._arm = true; a.classList.add("arm"); a.textContent = "Точно удалить?"; return; }
+    const col = edit._kind === "item" ? "items" : edit._kind === "store" ? "stores" : "suppliers";
+    del(col, edit.id).then(() => { toast("Удалено"); closeModal(); }, err => toast(writeErr(err), "neg"));
+  }
+  else if (act === "reprice") repriceForm();
+  else if (act === "reprice-go") doReprice();
+  else if (act === "line-add") { edit.lines.push({item:"", qty:"", price:""}); renderDoc(); const s = document.querySelectorAll('[data-isr]'); s[s.length - 1]?.focus(); }
+  else if (act === "lines-clear") {
+    if (!edit._clr) { edit._clr = true; renderDoc(); return; }
+    edit._clr = false; const n = edit.lines.filter(l => l.item).length; edit.lines = [{item:"", qty:"", price:""}]; renderDoc();
+    toast(`Удалено строк: ${n}. Документ не сохранён — нажмите «Записать черновик» или «Провести», чтобы сохранить изменения.`);
+    document.querySelector('[data-isr="0"]')?.focus();
+  }
+  else if (act === "lines-clear-no") { edit._clr = false; renderDoc(); }
+  else if (act === "fill-stock") {
+    const src = edit.from; const have = new Set(edit.lines.map(l => l.item));
+    edit.lines = edit.lines.filter(l => l.item);
+    for (const it of sortedItems()) { const q = stockOf(src, it.id); if (q > 1e-9 && !have.has(it.id)) edit.lines.push(edit.type === "inventory" ? {item:it.id, fact:r2(q)} : {item:it.id, qty: edit.type === "transfer" ? "" : r2(q)}); }
+    if (!edit.lines.length) toast("В этой точке нет остатков.");
+    renderDoc();
+  }
+  else if (act === "doc-save") saveDoc(false);
+  else if (act === "doc-post") saveDoc(true);
+  else if (act === "doc-unpost") saveDoc(false);
+  else if (act === "doc-del") {
+    if (!edit._arm) { edit._arm = true; renderDoc(); return; }
+    del("docs", edit.id).then(() => { toast("Документ удалён"); closeModal(); }, err => toast(writeErr(err), "neg"));
+  }
+  else if (act === "mk-reset") { ui.mkDraft = {}; render(); }
+  else if (act === "mk-save") {
+    const cur = byId("settings", "markups"); const g = Object.assign({}, cur?.groups || {});
+    for (const [k, v] of Object.entries(ui.mkDraft || {})) { if (v === "" || v === null) delete g[k]; else g[k] = num(v); }
+    put("settings", {id: "markups", groups: g, updated: Date.now()}).then(() => { ui.mkDraft = {}; toast("Наценки сохранены, прибыль пересчитана"); bump(); }, e => toast(writeErr(e), "neg"));
+  }
+  else if (act === "open-folder") { try { window.localApi.openFolder(); } catch (_) {} }
+  else if (act === "imp-go") commitImport();
+  else if (act === "photo-stop") photoCtl?.abort();
+  else if (act === "photo-mkall") createMissing();
+  else if (act === "photo-mk1") createMissing(+ds.i);
+  else if (act === "frac-kg") fracToKg(String(ds.ids || "").split(",").filter(Boolean));
+  else if (act === "imp-reset") { imp = null; render(); }
+  else if (act === "demo-load") loadDemo();
+  else if (act === "demo-del") { if (a.dataset.arm) { delete a.dataset.arm; delDemo(); } else { a.dataset.arm = "1"; a.classList.add("arm"); a.textContent = "Точно удалить пример?"; } }
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.l !== undefined && edit) {
+    const [i, f] = t.dataset.l.split(":"); const l = edit.lines[+i];
+    if (f === "item") {
+      l.item = t.value; const it = itemOf(t.value);
+      if (it) { if (edit.type === "receipt") l.price = it.buy; if (edit.type === "sale") l.price = it.price; if (edit.type === "inventory" && (l.fact === undefined || l.fact === "")) l.fact = r2(stockOf(edit.from, it.id)); }
+      if (edit._arm) edit._arm = false;
+      renderDoc(); const q = document.querySelector(`[data-l="${i}:${edit.type === "inventory" ? "fact" : "qty"}"]`); q?.focus(); return;
+    }
+    l[f] = t.value; if (f === "qty" || f === "price") delete l.sum; refreshDocSums(); return;
+  }
+  if (t.dataset.h && edit) {
+    edit[t.dataset.h] = t.value;
+    if (["from","to","date"].includes(t.dataset.h) && t.tagName === "SELECT") renderDoc(); else refreshDocSums();
+    return;
+  }
+  if (t.dataset.r && edit) {
+    edit[t.dataset.r] = t.type === "number" ? t.value : t.value;
+    if (edit._kind === "item" && (t.dataset.r === "buy" || t.dataset.r === "price")) { const mk = num(edit.buy) ? (num(edit.price) - num(edit.buy)) / num(edit.buy) * 100 : NaN; const v = $("#mkview"); if (v) v.value = pct(mk); }
+    return;
+  }
+  if (t.id === "fillgroup" && edit) {
+    const g = t.value; if (!g) return; const have = new Set(edit.lines.map(l => l.item));
+    edit.lines = edit.lines.filter(l => l.item);
+    for (const it of sortedItems()) if ((it.group || "Без группы") === g && !have.has(it.id)) edit.lines.push({item:it.id, qty:"", price: edit.type === "receipt" ? it.buy : it.price, ...(edit.type === "inventory" ? {fact: r2(stockOf(edit.from, it.id))} : {})});
+    renderDoc(); return;
+  }
+  if (t.dataset.mkg !== undefined) { (ui.mkDraft = ui.mkDraft || {})[t.dataset.mkg] = t.value; return; }
+  const map = {jsearch:"jSearch", isearch:"itemSearch", ssearch:"stockSearch"};
+  if (map[t.id]) { ui[map[t.id]] = t.value; const pos = t.selectionStart; render(); const n = document.getElementById(t.id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } return; }
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.id === "pf" && t.value) { ui.from = t.value; if (ui.to < ui.from) ui.to = ui.from; render(); }
+  else if (t.id === "pt" && t.value) { ui.to = t.value; if (ui.from > ui.to) ui.from = ui.to; render(); }
+  else if (t.id === "jstore") { ui.jStore = t.value; render(); }
+  else if (t.id === "jsupp") { ui.jSupp = t.value; render(); }
+  else if (t.id === "jfrom") { ui.jFrom = t.value; render(); }
+  else if (t.id === "jreason") { ui.jReason = t.value; render(); }
+  else if (t.id === "jto") { ui.jTo = t.value; render(); }
+  else if (t.id === "igroup") { ui.itemGroup = t.value; render(); }
+  else if (t.id === "sgroup") { ui.stockGroup = t.value; render(); }
+  else if (t.id === "sstore") { ui.stockStore = t.value; render(); }
+  else if (t.id === "ssupp") { ui.stockSupp = t.value; render(); }
+  else if (t.id === "sqty") { ui.stockQty = t.value; render(); }
+  else if (t.id === "sqmin") { ui.stockQmin = t.value; render(); }
+  else if (t.id === "sqmax") { ui.stockQmax = t.value; render(); }
+  else if (t.id === "sstore") { ui.salesStore = t.value; render(); }
+  else if (t.id === "astore") { ui.abcStore = t.value; render(); }
+  else if (t.id === "citem") { ui.cardItem = t.value; render(); }
+  else if (t.id === "cstore") { ui.cardStore = t.value; render(); }
+  else if (t.dataset.h === "date" && edit) { edit.date = t.value; renderDoc(); }
+  else if (t.dataset.mkg !== undefined) { render(); const n = document.getElementById(t.id); }
+  else if (t.id === "restorefile" && t.files.length && window.localApi) {
+    const f = t.files[0]; t.value = "";
+    f.text().then(async txt => { let o; try { o = JSON.parse(txt); } catch (_) { toast("Это не файл резервной копии Учёт ТТ.", "neg"); return; }
+      if (!o || !Array.isArray(o.items) || !Array.isArray(o.docs) || !Array.isArray(o.stores)) { toast("В файле нет товаров, точек и документов. Выберите резервную копию Учёт ТТ.", "neg"); return; }
+      await window.localApi.replace(o); location.reload(); });
+  }
+  else if (t.id === "impfile" && t.files.length) { readImportFiles([...t.files]); t.value = ""; }
+  else if (t.id === "photofile" && t.files.length) { const f = [...t.files].filter(x => /^image\//.test(x.type) || /\.(jpe?g|png|webp|gif|heic)$/i.test(x.name)); t.value = ""; if (!f.length) toast("Выберите фото накладной (JPG или PNG).", "neg"); else readPhotos(f); }
+  else if (t.dataset.prro && imp) { imp.prros.get(t.dataset.prro).storeId = t.value; render(); }
+});
+document.addEventListener("dragover", e => { if (e.target.closest && e.target.closest("#dropzone")) { e.preventDefault(); e.target.closest("#dropzone").style.borderColor = "var(--accent)"; } });
+document.addEventListener("dragleave", e => { const z = e.target.closest && e.target.closest("#dropzone"); if (z) z.style.borderColor = ""; });
+document.addEventListener("drop", e => { const z = e.target.closest && e.target.closest("#dropzone"); if (!z) return; e.preventDefault(); z.style.borderColor = ""; if (e.dataTransfer.files.length) readImportFiles([...e.dataTransfer.files]); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
+
+/* ---------- boot ---------- */
+(function initView(){
+  const h = (location.hash || "").slice(1);
+  const all = NAV.flatMap(g => g[1].map(x => x[0]));
+  const v = all.find(k => k.replace(":", "-") === h);
+  if (v) ui.view = v;
+})();
+async function boot(){
+  renderRail();
+  const C = window.claude;
+  if (C && typeof C.use === "function") {
+    C.use("sample").then(x => { smp = x; }, () => {});
+    try { db = await C.use("db"); } catch (_) { db = null; }
+    try { dl = await C.use("downloads"); } catch (_) { dl = null; }
+    try { const u = await C.use("user"); if (u) { const w = await u.can("data.write"); if (w === false) canWrite = false; } } catch (_) {}
+  }
+  if (db) {
+    mode = "db";
+    for (const c of COLS) db.collection(c).onSnapshot(snap => { S[c] = snap.docs.map(d => Object.assign({id: d.id}, d.data())); loaded.add(c); bump(); },
+      err => { loaded.add(c); if (err && err.code === "revoked") { canWrite = false; } toast("Связь с базой прервана: " + (err && err.message || "") + ". Обновите страницу.", "neg"); bump(); });
+    setTimeout(() => { if (loaded.size < COLS.length) { COLS.forEach(c => loaded.add(c)); toast("База отвечает медленно — показаны загруженные данные. Обновите страницу через минуту.", "neg"); bump(); } }, 15000);
+  } else {
+    mode = "local"; Object.assign(S, makeDemo([])); bump();
+  }
+}
+boot();
+})();
+</script>
+
+</body></html>
